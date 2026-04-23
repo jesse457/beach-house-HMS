@@ -125,6 +125,14 @@ class BookingsTable
                     ->visible(fn (Booking $record) => $record->status === BookingStatus::Pending)
                     ->color('success'),
 
+Action::make('print_receipt')
+    ->label('Print Receipt')
+    ->icon('heroicon-m-printer')
+    ->color('gray')
+    // This assumes you have a route named 'bookings.receipt'
+    ->url(fn (Booking $record): string => route('bookings.receipt', $record), shouldOpenInNewTab: true)
+    ->visible(fn (Booking $record) => $record->status === BookingStatus::CheckedOut),
+
                 Action::make('check_out')
                     ->label('Check Out')
                     ->icon('heroicon-m-banknotes')

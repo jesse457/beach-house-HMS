@@ -1,19 +1,20 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { useForm, Head, Link } from '@inertiajs/react'
+import { useForm, Head, Link, usePage } from '@inertiajs/react'
 import {
   CreditCard,
   Banknote,
   Check,
   ChevronLeft,
   ChevronRight,
-  Info,
   ArrowRight,
   ShoppingBag,
   Trash2,
   Loader2,
   Users,
   Calendar as CalendarIcon,
-  MapPin
+  AlertCircle,
+  XCircle,
+  Info
 } from 'lucide-react'
 import Layout from '../../Layouts/Layout'
 import { Button } from '../../Components/ui/Button'
@@ -25,7 +26,11 @@ const PAYMENT_METHODS = [
   { id: 'cash', label: 'Pay at Hotel', icon: Banknote, desc: 'Payment during check-in' },
 ]
 
-const inputCls = 'w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5016] bg-white transition-all shadow-sm outline-none placeholder:text-neutral-300'
+// Updated Input class to handle error states
+const getInputCls = (hasError: any) => `
+  w-full rounded-xl border px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5016] bg-white transition-all shadow-sm outline-none placeholder:text-neutral-300
+  ${hasError ? 'border-red-500 ring-1 ring-red-500' : 'border-neutral-200'}
+`
 const labelCls = 'flex items-center gap-2 text-[11px] font-bold text-[#2D5016] mb-2 uppercase tracking-widest'
 
 const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
@@ -41,7 +46,6 @@ export default function BookingPage() {
   const [viewDate, setViewDate] = useState(new Date())
   const [rangeStart, setRangeStart] = useState<Date | null>(null)
   const [rangeEnd, setRangeEnd] = useState<Date | null>(null)
-  const [hovered, setHovered] = useState<Date | null>(null)
 
   const { data, setData, post, processing, errors } = useForm({
     room_ids: [] as number[],
@@ -59,12 +63,10 @@ export default function BookingPage() {
   });
 
   // Sync rooms from cart
-  const itemIdsString = useMemo(() => items.map(i => i.id).join(','), [items]);
   useEffect(() => {
     if (isHydrated) setData('room_ids', items.map(item => item.id));
-  }, [itemIdsString, isHydrated]);
+  }, [items, isHydrated]);
 
-  // Pricing Logic
   const nights = useMemo(() => {
     if (!rangeStart || !rangeEnd) return 0;
     const diff = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / 86400000);
@@ -78,9 +80,6 @@ export default function BookingPage() {
   const handleDayClick = (day: Date) => {
     if (day < today) return
     if (!rangeStart || (rangeStart && rangeEnd)) {
-      setRangeStart(day); setRangeEnd(null)
-      setData(prev => ({ ...prev, checked_in_at: toISO(day), checked_out_at: '' }))
-    } else if (day <= rangeStart) {
       setRangeStart(day); setRangeEnd(null)
       setData(prev => ({ ...prev, checked_in_at: toISO(day), checked_out_at: '' }))
     } else {
@@ -97,11 +96,22 @@ export default function BookingPage() {
     });
   };
 
+  // Guard: Not Hydrated
   if (!isHydrated) return (
+    <Layout><div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-[#2D5016]" size={32} /></div></Layout>
+  );
+
+  // Guard: Empty Cart
+  if (items.length === 0) return (
     <Layout>
-        <div className="h-screen flex items-center justify-center">
-            <Loader2 className="animate-spin text-[#2D5016]" size={32} />
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center px-4">
+        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6 text-neutral-400">
+            <ShoppingBag size={32} />
         </div>
+        <h2 className="text-3xl font-black text-[#2D5016] italic">Your cart is empty</h2>
+        <p className="text-neutral-500 mt-2 max-w-sm">You haven't selected any luxury rooms yet. Please browse our collection to begin.</p>
+        <Link href="/rooms" className="mt-8 px-8 py-4 bg-[#2D5016] text-white rounded-2xl font-bold transition-transform hover:scale-105">Browse Rooms</Link>
+      </div>
     </Layout>
   );
 
@@ -115,6 +125,19 @@ export default function BookingPage() {
             <p className="text-neutral-500 mt-2 font-medium">Complete your reservation for a world-class experience.</p>
         </header>
 
+        {/* Global Error Banner */}
+        {Object.keys(errors).length > 0 && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-red-600">
+                <XCircle className="shrink-0 mt-0.5" size={18} />
+                <div>
+                    <p className="text-sm font-bold uppercase tracking-wider">Please fix the following errors:</p>
+                    <ul className="text-xs mt-1 list-disc list-inside opacity-80">
+                        {Object.values(errors).map((err, i) => <li key={i}>{err}</li>)}
+                    </ul>
+                </div>
+            </div>
+        )}
+
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
           <div className="lg:col-span-8 space-y-12">
@@ -124,12 +147,12 @@ export default function BookingPage() {
               <h2 className={labelCls}><ShoppingBag size={14}/> Selected Rooms</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 {items.map((room) => (
-                  <div key={room.id} className="flex items-center justify-between p-4 bg-white rounded-3xl border border-neutral-100 shadow-sm group">
+                  <div key={room.id} className="flex items-center justify-between p-4 bg-white rounded-3xl border border-neutral-100 shadow-sm">
                     <div className="flex items-center gap-4">
                       <img src={room.image} className="w-16 h-16 rounded-2xl object-cover" alt={room.name} />
                       <div>
                         <p className="text-sm font-bold text-[#2D5016]">{room.name}</p>
-                        <p className="text-[10px] text-neutral-400 font-bold uppercase">${room.price_per_night} / night</p>
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase">XAF {room.price_per_night} / night</p>
                       </div>
                     </div>
                     <button type="button" onClick={() => removeFromCart(room.id)} className="p-2 text-neutral-300 hover:text-red-500 transition-colors">
@@ -138,6 +161,7 @@ export default function BookingPage() {
                   </div>
                 ))}
               </div>
+              {errors.room_ids && <p className="text-red-500 text-[10px] mt-2 font-bold uppercase">{errors.room_ids}</p>}
             </section>
 
             {/* 2. GUEST & OCCUPANCY */}
@@ -145,29 +169,42 @@ export default function BookingPage() {
               <h2 className={labelCls}><Users size={14}/> Guest Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div className="md:col-span-2">
-                    <input type="text" required className={inputCls} placeholder="Full Name (as per ID)" value={data.name} onChange={e => setData('name', e.target.value)} />
-                    {errors.name && <p className="text-red-500 text-[10px] mt-1">{errors.name}</p>}
+                    <input type="text" className={getInputCls(errors.name)} placeholder="Full Name (as per ID)" value={data.name} onChange={e => setData('name', e.target.value)} />
+                    {errors.name && <p className="text-red-500 text-[10px] mt-1 font-medium">{errors.name}</p>}
                 </div>
-                <input type="email" required className={inputCls} placeholder="Email Address" value={data.email} onChange={e => setData('email', e.target.value)} />
-                <input type="tel" required className={inputCls} placeholder="Phone Number" value={data.phone} onChange={e => setData('phone', e.target.value)} />
-                <input type="text" required className={inputCls} placeholder="ID / Passport Number" value={data.id_card_number} onChange={e => setData('id_card_number', e.target.value)} />
+
+                <div>
+                    <input type="email" className={getInputCls(errors.email)} placeholder="Email Address" value={data.email} onChange={e => setData('email', e.target.value)} />
+                    {errors.email && <p className="text-red-500 text-[10px] mt-1 font-medium">{errors.email}</p>}
+                </div>
+
+                <div>
+                    <input type="tel" className={getInputCls(errors.phone)} placeholder="Phone Number" value={data.phone} onChange={e => setData('phone', e.target.value)} />
+                    {errors.phone && <p className="text-red-500 text-[10px] mt-1 font-medium">{errors.phone}</p>}
+                </div>
+
+                <div className="md:col-span-1">
+                    <input type="text" className={getInputCls(errors.id_card_number)} placeholder="ID / Passport Number" value={data.id_card_number} onChange={e => setData('id_card_number', e.target.value)} />
+                    {errors.id_card_number && <p className="text-red-500 text-[10px] mt-1 font-medium">{errors.id_card_number}</p>}
+                </div>
 
                 <div className="flex gap-4">
                     <div className="flex-1">
                         <label className="text-[9px] font-black text-neutral-400 ml-1 uppercase mb-1 block">Adults</label>
-                        <input type="number" min="1" className={inputCls} value={data.adults_count} onChange={e => setData('adults_count', parseInt(e.target.value))} />
+                        <input type="number" min="1" className={getInputCls(errors.adults_count)} value={data.adults_count} onChange={e => setData('adults_count', parseInt(e.target.value))} />
                     </div>
                     <div className="flex-1">
                         <label className="text-[9px] font-black text-neutral-400 ml-1 uppercase mb-1 block">Children</label>
-                        <input type="number" min="0" className={inputCls} value={data.children_count} onChange={e => setData('children_count', parseInt(e.target.value))} />
+                        <input type="number" min="0" className={getInputCls(errors.children_count)} value={data.children_count} onChange={e => setData('children_count', parseInt(e.target.value))} />
                     </div>
                 </div>
 
                 <div className="md:col-span-2">
-                    <input type="text" className={inputCls} placeholder="Residential Address" value={data.address} onChange={e => setData('address', e.target.value)} />
+                    <input type="text" className={getInputCls(errors.address)} placeholder="Residential Address" value={data.address} onChange={e => setData('address', e.target.value)} />
+                    {errors.address && <p className="text-red-500 text-[10px] mt-1 font-medium">{errors.address}</p>}
                 </div>
                 <div className="md:col-span-2">
-                    <textarea rows={3} className={inputCls} placeholder="Special requests or notes (Optional)" value={data.notes} onChange={e => setData('notes', e.target.value)} />
+                    <textarea rows={3} className={getInputCls(false)} placeholder="Special requests or notes (Optional)" value={data.notes} onChange={e => setData('notes', e.target.value)} />
                 </div>
               </div>
             </section>
@@ -175,7 +212,15 @@ export default function BookingPage() {
             {/* 3. CALENDAR STAY */}
             <section className="bg-white rounded-[2.5rem] p-8 border border-neutral-100 shadow-sm">
                 <h2 className={labelCls}><CalendarIcon size={14}/> Select Stay Period</h2>
-                <div className="border border-neutral-100 rounded-[2rem] overflow-hidden mt-6">
+
+                {/* Specific Date Errors */}
+                {(errors.checked_in_at || errors.checked_out_at) && (
+                    <div className="mb-4 text-red-500 text-[10px] font-bold uppercase flex items-center gap-1">
+                        <AlertCircle size={12}/> {errors.checked_in_at || errors.checked_out_at}
+                    </div>
+                )}
+
+                <div className={`border rounded-[2rem] overflow-hidden mt-6 transition-colors ${errors.checked_in_at ? 'border-red-500 shadow-sm shadow-red-100' : 'border-neutral-100'}`}>
                     <div className="flex items-center justify-between px-8 py-5 bg-[#2D5016] text-white">
                         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}><ChevronLeft /></button>
                         <span className="text-sm font-black uppercase tracking-widest">{viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
@@ -224,23 +269,19 @@ export default function BookingPage() {
                         <span>Length of Stay</span>
                         <span className="font-bold">{nights} Nights</span>
                     </div>
-                    <div className="flex justify-between items-center opacity-70">
-                        <span>Occupancy</span>
-                        <span className="font-bold">{data.adults_count + data.children_count} Guests</span>
-                    </div>
 
                     <div className="pt-6 border-t border-white/10 space-y-3">
                         <div className="flex justify-between">
                             <span className="opacity-60">Subtotal</span>
-                            <span className="font-bold">${subtotal.toLocaleString()}</span>
+                            <span className="font-bold">XAF {subtotal.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="opacity-60">Taxes (10%)</span>
-                            <span className="font-bold">${taxes.toLocaleString()}</span>
+                            <span className="font-bold">XAF {taxes.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-end pt-4">
                             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Grand Total</span>
-                            <span className="text-4xl font-black italic">${total.toLocaleString()}</span>
+                            <span className="text-4xl font-black italic">XAF {total.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
@@ -254,6 +295,7 @@ export default function BookingPage() {
                                 onClick={() => setData('payment_method', m.id)}
                                 className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left
                                     ${data.payment_method === m.id ? 'bg-white text-[#2D5016] border-white' : 'border-white/10 hover:border-white/30'}
+                                    ${errors.payment_method && data.payment_method !== m.id ? 'border-red-500/50' : ''}
                                 `}
                             >
                                 <m.icon size={20} />
@@ -265,17 +307,35 @@ export default function BookingPage() {
                             </button>
                         ))}
                     </div>
+                    {errors.payment_method && <p className="text-red-400 text-center text-[9px] font-black uppercase tracking-widest mt-2">{errors.payment_method}</p>}
                 </div>
 
                 <Button
                     type="submit"
-                    disabled={processing || nights < 1 || !data.payment_method}
+                    disabled={processing || nights < 1}
                     className="w-full h-20 bg-[#6B9E3F] hover:bg-[#7db84a] text-white rounded-3xl mt-10 font-black uppercase tracking-[0.2em] text-xs shadow-xl transition-transform hover:scale-[1.02] flex items-center justify-center gap-3"
                 >
-                    {processing ? <Loader2 className="animate-spin" /> : <>Confirm Stay <ArrowRight size={18}/></>}
+                    {processing ? (
+                        <div className="flex items-center gap-2">
+                             <Loader2 className="animate-spin" size={18} />
+                             Processing...
+                        </div>
+                    ) : <>Confirm Stay <ArrowRight size={18}/></>}
                 </Button>
 
-                {nights < 1 && <p className="text-center text-[9px] font-bold text-red-300 mt-4 uppercase">Select your stay dates to continue</p>}
+                {/* Inline contextual warnings */}
+                {nights < 1 && (
+                    <div className="flex items-center justify-center gap-2 text-red-300 mt-4">
+                        <Info size={12}/>
+                        <p className="text-[9px] font-bold uppercase tracking-wider">Please select stay dates</p>
+                    </div>
+                )}
+                {!data.payment_method && nights >= 1 && (
+                    <div className="flex items-center justify-center gap-2 text-yellow-300 mt-4">
+                        <Info size={12}/>
+                        <p className="text-[9px] font-bold uppercase tracking-wider">Select a payment method</p>
+                    </div>
+                )}
             </div>
           </div>
 

@@ -36,7 +36,7 @@ class EditBooking extends EditRecord
                 'amount' => $data['deposit_amount'],
                 'payment_method' => $data['deposit_method'],
                 'type' => PaymentType::BOOKING,
-                'status' => PaymentStatus::PARTIAL,
+                'status' => PaymentStatus::Partial,
                 'paid_at' => now(),
             ]);
 
@@ -46,9 +46,9 @@ class EditBooking extends EditRecord
 
             if ($deposit >= $total) {
                 $booking->update([
-                    'status' => PaymentStatus::COMPLETED, ]);
+                    'status' => PaymentStatus::Completed, ]);
             } else {
-                $booking->update([PaymentStatus::PARTIAL]);
+                $booking->update([PaymentStatus::Partial]);
             }
         }
         // This is a safety check: Reset all rooms, then re-occupy based on active bookings
