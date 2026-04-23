@@ -1,11 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import * as HeroIcons from '@heroicons/react/24/outline';
+
+// Import all icon sets that Filament uses
+import * as OutlineIcons from '@heroicons/react/24/outline';
+import * as SolidIcons from '@heroicons/react/24/solid';
+import * as MiniIcons from '@heroicons/react/20/solid';
+import * as MicroIcons from '@heroicons/react/16/solid';
 
 interface Amenity {
   id: number;
   name: string;
-  icon: string; // From Laravel database: e.g., "wifi", "shield-check"
+  icon: string; // From Laravel database: e.g., "heroicon-o-wifi", "heroicon-s-shield-check"
 }
 
 interface Props {
@@ -13,36 +18,56 @@ interface Props {
 }
 
 /**
- * Helper to convert kebab-case (Laravel) to PascalCase + "Icon" (React Heroicons)
+ * Helper to convert Filament prefixes to the correct Heroicons React package
+ * and format kebab-case to PascalCase (e.g., heroicon-o-shield-check -> ShieldCheckIcon)
  */
 function DynamicHeroIcon({ iconName, className }: { iconName: string; className: string }) {
-  // Clean prefixes if they exist (e.g., heroicon-o-wifi -> wifi)
-  const cleanName = iconName.replace(/^(heroicon-o-|heroicon-s-|heroicon-)/, '');
+  if (!iconName) return <OutlineIcons.InformationCircleIcon className={className} />;
 
-  // Convert kebab-case to PascalCase (e.g., shield-check -> ShieldCheck)
+  // 1. Determine which icon set to use based on the Filament prefix
+  let IconSet: any = OutlineIcons; // Default to outline
+
+  if (iconName.startsWith('heroicon-s-')) {
+    IconSet = SolidIcons;
+  } else if (iconName.startsWith('heroicon-m-')) {
+    IconSet = MiniIcons;
+  } else if (iconName.startsWith('heroicon-c-')) {
+    IconSet = MicroIcons;
+  }
+
+  // 2. Clean prefixes to get the base name
+  const cleanName = iconName.replace(/^(heroicon-o-|heroicon-s-|heroicon-m-|heroicon-c-|heroicon-)/, '');
+
+  // 3. Convert kebab-case to PascalCase (e.g., shield-check -> ShieldCheck)
   const pascalName = cleanName
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
 
-  // Heroicons React exports as NameIcon (e.g., ShieldCheckIcon)
+  // 4. Append 'Icon' to match React Heroicons exports (e.g., ShieldCheckIcon)
   const iconKey = `${pascalName}Icon`;
-  const IconComponent = (HeroIcons as any)[iconKey];
+
+  // 5. Try to find the icon in the matched set
+  let IconComponent = IconSet[iconKey];
+
+  // 6. Fallback sequence: If it fails in the specific set, check outline, then default to a generic icon
+  if (!IconComponent && IconSet !== OutlineIcons) {
+      IconComponent = OutlineIcons[iconKey];
+  }
 
   if (!IconComponent) {
-    // Fallback to a default icon if not found
-    return <HeroIcons.InformationCircleIcon className={className} />;
+    return <OutlineIcons.InformationCircleIcon className={className} />;
   }
 
   return <IconComponent className={className} />;
 }
 
-export default function AmenitiesSection({ amenities = [] }: Props) {
+export default function AmenitiesSection({ amenities =[] }: Props) {
   return (
     <section className="py-24 bg-[#EAE6D6]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* Header (Replace Reveal with motion.div if Reveal is not defined) */}
+        {/* Header */}
         <div className="text-center mb-14">
           <span className="text-[#6B9E3F] text-sm font-semibold uppercase tracking-widest">
             Amenities

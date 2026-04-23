@@ -98,9 +98,9 @@ class AmenityForm
                                 ])
                                 ->collapsible()
                                 ->compact(),
-                        ])
-                        ->columnSpan(['default' => 12, 'lg' => 4]),
-                ]),
+                        ]) ->columnSpan(['default' => 12, 'lg' => 4])
+                       ,
+                ]) ->columnSpan(['default' => 12, 'lg' => 4]),
         ]);
     }
 }
