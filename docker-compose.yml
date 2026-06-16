@@ -7,7 +7,7 @@ networks:
 services:
   # --- Laravel Application (FrankenPHP behind Nginx) ---
   app:
-    image: ghcr.io/jesse457/botaland-resort:latest
+    image: ghcr.io/jesse457/beach-house-hms:latest
     container_name: botaland_app
     restart: unless-stopped
     ports:
@@ -94,6 +94,8 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+    env_file:
+      - .env    # Feeds host credentials so the CLI tool can authenticate
     entrypoint: >
       /bin/sh -c "
       until (/usr/bin/mc alias set myminio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD) do echo 'Waiting for MinIO...' && sleep 1; done;

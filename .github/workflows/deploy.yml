@@ -52,6 +52,7 @@ jobs:
         run: |
           echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
+      # Cache Composer Dependencies
       - name: Cache Composer Dependencies
         uses: actions/cache@v4
         with:
@@ -140,3 +141,38 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # --- Stage 3: Deploy to VPS (Only runs on push/merge to main/master) ---
+  deploy:
+    name: Deploy to VPS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Execute remote SSH commands to deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          envs: GITHUB_TOKEN,REGISTRY
+          script: |
+            # 1. Log in to GitHub Container Registry inside the VPS
+            echo $GITHUB_TOKEN | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+
+            # 2. Navigate to your project directory on the VPS
+            cd ~/project
+
+            # 3. Pull the latest images from GHCR
+            docker compose pull
+
+            # # 4. Recreate and start the containers in the background
+            # docker compose up -d
+
+            # # 5. Clean up old, unused Docker images to save VPS disk space
+            # docker image prune -f
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}
