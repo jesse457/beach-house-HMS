@@ -18,7 +18,11 @@ class PaymentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'amount' => $this->faker->randomFloat(2, 10, 500),
+            'payment_method' => $this->faker->randomElement(['cash', 'credit_card', 'bank_transfer', 'mobile_money']),
+            'status' => \App\Enums\PaymentStatus::Completed,
+            'type' => \App\Enums\PaymentType::BOOKING,
+            'paid_at' => now(),
         ];
     }
 }

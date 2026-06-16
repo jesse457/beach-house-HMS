@@ -15,6 +15,13 @@ permissions:
   contents: read
   packages: write
 
+env:
+  PHP_VERSION: '8.4'
+  NODE_VERSION: '20'
+  # Image registry and name — uses the repo owner/name for consistent GHCR paths
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   # --- Stage 1: Run the App Test Suite ---
   test:
@@ -25,11 +32,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Setup PHP environment matching your Dockerfile (PHP 8.4)
+      # Setup PHP environment matching the Dockerfile (PHP 8.4)
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: ${{ env.PHP_VERSION }}
           extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, bcmath, gd, intl
           coverage: none
 
@@ -37,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
 
       # Cache Composer dependencies for faster subsequent runs
       - name: Get Composer Cache Directory
@@ -53,7 +60,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      # Install Composer dependencies (including dev dependencies for PHPUnit)
+      # Cache NPM dependencies
+      - name: Cache NPM Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Install Composer dependencies (including dev dependencies for testing)
       - name: Install PHP Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -63,16 +79,13 @@ jobs:
           npm ci
           npm run build
 
-      # Configure Environment for local testing (Uses SQLite in-memory database)
+      # Copy .env.example and generate app key for testing
       - name: Prepare Test Environment
         run: |
           cp .env.example .env
           php artisan key:generate
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
 
-      # Run Laravel tests (PHPUnit/Pest)
+      # Run Laravel tests (Pest PHP with SQLite in-memory)
       - name: Execute Tests
         run: php artisan test
         env:
@@ -92,7 +105,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Set up Docker Buildx (highly recommended for building multi-stage images)
+      # Set up Docker Buildx for multi-stage builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -100,9 +113,21 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata for Docker tags and labels
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=,format=short
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
       # Build and Push the production multi-stage image
       - name: Build and Push Docker Image
@@ -111,8 +136,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ghcr.io/jesse457/botaland-resort:latest
-            ghcr.io/jesse457/botaland-resort:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
