@@ -33,9 +33,6 @@ function createStaff(): User
 
 // ============================================================
 // Authorization — Admin Panel
-// NOTE: The AdminPanelProvider has authMiddleware commented out.
-// When Authenticate::class is re-enabled, the tests marked with
-// "TODO" below should be updated to expect 403 / redirect.
 // ============================================================
 
 test('admin user can access admin dashboard', function () {
@@ -44,25 +41,22 @@ test('admin user can access admin dashboard', function () {
     $response->assertStatus(200);
 });
 
-test('admin dashboard is accessible (auth middleware currently disabled)', function () {
-    // TODO: change to assertStatus(403) after re-enabling Authenticate middleware
+test('receptionist cannot access admin dashboard', function () {
     $response = $this->actingAs(createReceptionist())->get('/admin');
 
-    $response->assertStatus(200); // should be 403 when auth is enabled
+    $response->assertStatus(403);
 });
 
-test('admin dashboard is accessible to staff (auth middleware currently disabled)', function () {
-    // TODO: change to assertRedirect() after re-enabling Authenticate middleware
+test('staff cannot access admin dashboard', function () {
     $response = $this->actingAs(createStaff())->get('/admin');
 
-    $response->assertStatus(200); // should be 403 when auth is enabled
+    $response->assertStatus(403);
 });
 
-test('admin dashboard is accessible to guests (auth middleware currently disabled)', function () {
-    // TODO: change to assertRedirect() after re-enabling Authenticate middleware
+test('guest is redirected to login when accessing admin panel', function () {
     $response = $this->get('/admin');
 
-    $response->assertStatus(200); // should redirect to login when auth is enabled
+    $response->assertRedirect(route('filament.admin.auth.login'));
 });
 
 // ============================================================
@@ -101,12 +95,11 @@ test('amenity view page loads for admin', function () {
     $response->assertStatus(200);
 });
 
-test('amenity list page loads for any authenticated user (auth middleware disabled)', function () {
-    // TODO: change to assertStatus(403) after re-enabling Authenticate middleware
+test('amenity list page returns 403 for unauthorized role', function () {
     $response = $this->actingAs(createReceptionist())
         ->get('/admin/amenities');
 
-    $response->assertStatus(200);
+    $response->assertStatus(403);
 });
 
 // ============================================================

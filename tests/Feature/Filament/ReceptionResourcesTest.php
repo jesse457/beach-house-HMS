@@ -51,9 +51,6 @@ function createTestBooking(): Booking
 
 // ============================================================
 // Authorization — Reception Panel
-// NOTE: The ReceptionPanelProvider has authMiddleware commented out.
-// When Authenticate::class is re-enabled, the tests marked with
-// "TODO" below should be updated to expect 403 / redirect.
 // ============================================================
 
 test('admin user can access reception dashboard', function () {
@@ -68,18 +65,16 @@ test('receptionist can access reception dashboard', function () {
     $response->assertStatus(200);
 });
 
-test('reception dashboard is accessible to staff (auth middleware disabled)', function () {
-    // TODO: change to assertStatus(403) after re-enabling Authenticate middleware
+test('staff cannot access reception dashboard', function () {
     $response = $this->actingAs(recStaff())->get('/reception');
 
-    $response->assertStatus(200); // should be 403 when auth is enabled
+    $response->assertStatus(403);
 });
 
-test('reception dashboard is accessible to guests (auth middleware disabled)', function () {
-    // TODO: change to assertRedirect() after re-enabling Authenticate middleware
+test('guest is redirected to login when accessing reception panel', function () {
     $response = $this->get('/reception');
 
-    $response->assertStatus(200); // should redirect to login when auth is enabled
+    $response->assertRedirect(route('filament.reception.auth.login'));
 });
 
 // ============================================================
@@ -100,12 +95,11 @@ test('booking list page loads for admin', function () {
     $response->assertStatus(200);
 });
 
-test('booking list page is accessible to staff (auth middleware disabled)', function () {
-    // TODO: change to assertStatus(403) after re-enabling Authenticate middleware
+test('booking list page returns 403 for staff', function () {
     $response = $this->actingAs(recStaff())
         ->get('/reception/bookings');
 
-    $response->assertStatus(200);
+    $response->assertStatus(403);
 });
 
 test('booking create page loads for receptionist', function () {

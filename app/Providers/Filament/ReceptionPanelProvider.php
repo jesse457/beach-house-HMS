@@ -27,7 +27,7 @@ class ReceptionPanelProvider extends PanelProvider
         return $panel
             ->id('reception')
             ->path('reception')
-  ->darkMode(true) 
+  ->darkMode(true)
             // --- 1. Professional Branding & Layout ---
             ->brandName('Grand Hotel Reception')
             ->brandLogoHeight('2rem') // Controls logo sizing
@@ -94,8 +94,9 @@ class ReceptionPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->login()
             ->authMiddleware([
-                // Authenticate::class, // Re-enable for security
+                Authenticate::class,
             ]);
     }
 }
