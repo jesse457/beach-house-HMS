@@ -96,7 +96,7 @@ class BookingController extends Controller
                 'checked_out_at' => $validated['checked_out_at'],
                 'adults_count' => $validated['adults_count'],
                 'children_count' => $validated['children_count'],
-                'notes' => $validated['notes'],
+                'notes' => $validated['notes'] ?? null,
             ]);
             Log::info('Booking record created', ['booking_id' => $booking->id, 'reference' => $booking->booking_reference]);
 
