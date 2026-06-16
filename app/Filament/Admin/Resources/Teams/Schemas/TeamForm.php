@@ -70,6 +70,7 @@ class TeamForm
                                 ->schema([
                                     FileUpload::make('image')
                                         ->label('Avatar')
+                                        ->disk('s3')
                                         ->image()
                                         ->imageEditor()
                                         ->directory('team-members')

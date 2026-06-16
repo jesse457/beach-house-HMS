@@ -39,7 +39,7 @@ class AmenitiesTable
 
                 TextColumn::make('price')
                     ->label('Price')
-                    ->money('usd')
+                    ->money('XAF')
                     ->sortable()
                     ->placeholder('Free'),
 

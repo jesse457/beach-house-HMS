@@ -20,7 +20,7 @@ class BookingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
-    protected static ?string $recordTitleAttribute = 'UserGuest';
+    protected static ?string $recordTitleAttribute = 'booking_reference';
 
     public static function form(Schema $schema): Schema
     {
@@ -39,19 +39,6 @@ class BookingResource extends Resource
         ];
     }
 
-    // In BookingResource.php
-public static function getRegistrationOptions(): array
-{
-    return [
-        'afterCreate' => function ($record) {
-             foreach ($record->rooms as $room) {
-                 $record->rooms()->updateExistingPivot($room->id, [
-                     'price_at_booking' => $room->price_per_night
-                 ]);
-             }
-        }
-    ];
-}
     public static function getPages(): array
     {
         return [

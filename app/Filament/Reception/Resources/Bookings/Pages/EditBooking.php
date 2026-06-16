@@ -5,8 +5,10 @@ namespace App\Filament\Reception\Resources\Bookings\Pages;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Filament\Reception\Resources\Bookings\BookingResource;
+use App\Models\Room;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\DB;
 
 class EditBooking extends EditRecord
 {
@@ -19,44 +21,48 @@ class EditBooking extends EditRecord
         ];
     }
 
-
-     protected function afterSave(): void
+    protected function afterSave(): void
     {
-        // When updating, we must first make sure rooms
-        // that were REMOVED from this booking are marked as vacant.
-        // Then mark the new rooms as occupied.
-  // 1. Get the data from the form
         $data = $this->form->getRawState();
         $booking = $this->record;
+        DB::transaction(function () use ($booking, $data) {
+            // 1. Handle New Payment/Deposit creation
+            if (! empty($data['deposit_amount']) && $data['deposit_amount'] > 0) {
 
-        if (! empty($data['deposit_amount']) && $data['deposit_amount'] > 0) {
+                // Calculate total already paid (including this new amount)
+                $alreadyPaid = $booking->payments()->sum('amount') + (float) $data['deposit_amount'];
+                $totalBill = (float) $booking->total_price;
 
-            // 3. Create the related payment record
-            $booking->payments()->create([
-                'amount' => $data['deposit_amount'],
-                'payment_method' => $data['deposit_method'],
-                'type' => PaymentType::BOOKING,
-                'status' => PaymentStatus::Partial,
-                'paid_at' => now(),
-            ]);
+                // Determine status for THIS specific payment record
+                // If this payment clears the bill, it's Completed, otherwise it's Partial
+                $newPaymentStatus = ($alreadyPaid >= $totalBill)
+                    ? PaymentStatus::Completed
+                    : PaymentStatus::Partial;
 
-            // 4. Update the Booking payment status automatically
-            $total = (float) $booking->total_price;
-            $deposit = (float) $data['deposit_amount'];
-
-            if ($deposit >= $total) {
-                $booking->update([
-                    'status' => PaymentStatus::Completed, ]);
-            } else {
-                $booking->update([PaymentStatus::Partial]);
+                // Create the single payment record
+                $booking->payments()->create([
+                    'amount' => $data['deposit_amount'],
+                    'payment_method' => $data['deposit_method'] ?? 'Cash',
+                    'type' => PaymentType::BOOKING,
+                    'status' => $newPaymentStatus,
+                    'paid_at' => now(),
+                ]);
             }
-        }
-        // This is a safety check: Reset all rooms, then re-occupy based on active bookings
-        \App\Models\Room::whereHas('bookings', function($q) {
-            $q->where('bookings.id', $this->record->id);
-        })->update(['is_occupied' => false]);
 
-        $this->record->refresh(); // Get fresh data
-        $this->record->updateRoomOccupancy();
+            // 2. Room Occupancy Management
+            // When editing, some rooms might have been removed.
+            // First, mark ALL rooms previously associated with this booking as vacant.
+            DB::table('rooms')
+                ->whereIn('id', function ($query) use ($booking) {
+                    $query->select('room_id')
+                        ->from('booking_room')
+                        ->where('booking_id', $booking->id);
+                })
+                ->update(['is_occupied' => false]);
+
+            // 3. Re-apply occupancy based on current status
+            $booking->refresh(); // Refresh to get the updated rooms from pivot table
+            $booking->updateRoomOccupancy();
+        });
     }
 }

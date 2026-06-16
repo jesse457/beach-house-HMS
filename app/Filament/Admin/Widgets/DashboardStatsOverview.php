@@ -5,7 +5,8 @@ namespace App\Filament\Admin\Widgets;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Booking;
-use App\Models\CheckIn;
+use App\Enums\BookingStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Guest;
 use App\Models\Payment;
 
@@ -16,13 +17,13 @@ class DashboardStatsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         // 1. Calculate Total Revenue (Completed Payments)
-        $totalRevenue = Payment::where('status', 'completed')->sum('amount');
+        $totalRevenue = Payment::where('status', PaymentStatus::Completed)->sum('amount');
 
         // 2. Count Pending Bookings
-        $pendingBookings = Booking::where('status', 'pending')->count();
+        $pendingBookings = Booking::where('status', BookingStatus::Pending)->count();
 
-        // 3. Count Active Check-ins (Guests who haven't checked out yet)
-        $activeCheckIns = Booking::whereNull('checked_out_at')->count();
+        // 3. Count Active Check-ins (Guests who haven't actually checked out yet)
+        $activeCheckIns = Booking::where('status', BookingStatus::CheckedIn)->count();
 
         // 4. Total Registered Guests
         $totalGuests = Guest::count();

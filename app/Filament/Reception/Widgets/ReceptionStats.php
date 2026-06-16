@@ -4,6 +4,7 @@ namespace App\Filament\Reception\Widgets;
 
 use App\Models\Room;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Enums\BookingStatus;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -12,6 +13,11 @@ class ReceptionStats extends BaseWidget
 {
     protected function getStats(): array
     {
+        $activeStatuses = [BookingStatus::Pending, BookingStatus::CheckedIn];
+
+        $outstanding = Booking::whereIn('status', $activeStatuses)->sum('total_price')
+            - Payment::whereHas('booking', fn ($q) => $q->whereIn('status', $activeStatuses))->sum('amount');
+
         return [
             Stat::make('Available Rooms', Room::where('is_occupied', false)->where('status', 'available')->count())
                 ->description('Ready for check-in')
@@ -28,7 +34,7 @@ class ReceptionStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-left-circle')
                 ->color('warning'),
 
-            Stat::make('Pending Payments', 'XAF' . number_format(Booking::whereIn('status', [BookingStatus::Pending, BookingStatus::CheckedIn])->get()->sum(fn($b) => $b->total_price - $b->payments->sum('amount')), 2))
+            Stat::make('Pending Payments', 'XAF' . number_format($outstanding, 2))
                 ->description('Outstanding balance')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('danger'),

@@ -40,7 +40,7 @@ class GuestOrdersTable
 
                 TextColumn::make('total_amount')
                     ->label('Total Amount')
-                    ->money('usd')
+                    ->money('XAF')
                     ->sortable()
                     ->weight(FontWeight::Bold)
                     ->color('primary'),

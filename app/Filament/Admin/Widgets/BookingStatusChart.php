@@ -17,19 +17,21 @@ class BookingStatusChart extends ChartWidget
         $pending = Booking::where('status', BookingStatus::Pending)->count();
         $checkedIn = Booking::where('status', BookingStatus::CheckedIn)->count();
         $cancelled = Booking::where('status', BookingStatus::Cancelled)->count();
-$checkeOut = Booking::where('status', BookingStatus::CheckedOut)->count();
+        $checkedOut = Booking::where('status', BookingStatus::CheckedOut)->count();
+
         return [
             'datasets' => [[
                     'label' => 'Bookings',
-                    'data' => [$pending, $checkedIn, $cancelled,$checkeOut],
-                    'backgroundColor' =>[
+                    'data' => [$pending, $checkedIn, $cancelled, $checkedOut],
+                    'backgroundColor' => [
                         '#f59e0b', // Amber (Pending)
-                        '#3b82f6', // Blue (Confirmed)
+                        '#3b82f6', // Blue (Checked In)
                         '#ef4444', // Red (Cancelled)
+                        '#10b981', // Emerald (Checked Out)
                     ],
                 ],
             ],
-            'labels' => ['Pending', 'Checked In', 'Cancelled','Checked Out'],
+            'labels' => ['Pending', 'Checked In', 'Cancelled', 'Checked Out'],
         ];
     }
 

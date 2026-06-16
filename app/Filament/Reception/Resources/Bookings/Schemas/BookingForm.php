@@ -163,7 +163,7 @@ class BookingForm
                                             ->live()
                                             ->afterStateUpdated(fn($state, Set $set) => $set('price_at_booking', Amenity::find($state)?->price ?? 0)),
                                         TextInput::make('quantity')->numeric()->default(1)->required()->live(),
-                                        TextInput::make('price_at_booking')->label('Unit Price')->prefix('XAF')->readOnly()->dehydrated(),
+                                        TextInput::make('price_at_booking')->label('Unit Price')->prefix('XAF')->dehydrated(),
                                     ])
                                     ->columns(3)
                                     ->live()
@@ -180,17 +180,13 @@ class BookingForm
                         Section::make('Financial Summary')
                             ->schema([
                                 TextInput::make('total_price')
-                                    ->label('Total Cost')
+                                    ->label('Total Cost (Negotiable)')
                                     ->numeric()
                                     ->prefix('XAF')
-                                    ->readOnly()
+                                    ->live()
                                     ->dehydrated()
+                                    ->hintIcon('heroicon-m-pencil', 'Auto-calculated — edit to set a negotiated price')
                                     ->extraAttributes(['class' => 'font-bold text-lg text-primary-600']),
-
-                                Select::make('payment_status')
-                                    ->options(['unpaid' => 'Unpaid', 'partial' => 'Partial Payment', 'paid' => 'Fully Paid'])
-                                    ->required()
-                                    ->default('unpaid'),
 
                                 Placeholder::make('balance')
                                     ->label('Current Debt')
@@ -262,6 +258,6 @@ class BookingForm
             $grandTotal += ((int)($item['quantity'] ?? 1) * (float)($item['price_at_booking'] ?? 0));
         }
 
-        $set('total_price', $grandTotal);
+        $set('total_price', round($grandTotal, 2));
     }
 }
