@@ -60,12 +60,6 @@ RUN mkdir -p /var/log/supervisor /run /app/storage/logs && \
     /run \
     /tmp
 
-# Run composer dump-autoload before dropping privileges
-RUN composer dump-autoload --optimize --no-dev --no-interaction
-
-# Remove composer to keep image clean
-RUN rm /usr/bin/composer
-
 # Drop to non-root user for runtime security
 USER www-data
 
