@@ -7,6 +7,8 @@ use App\Models\Amenity;
 use App\Models\Gallery;
 use App\Models\Room;
 use App\Models\RoomType;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -90,11 +92,14 @@ public function index()
         'testimonials' => [], // Passed as empty since testimonials are no longer queried
     ]);
 }
-    public function gallery()
+    public function gallery(Request $request)
     {
+        $perPage = 12;
+        $page = (int) $request->query('page', 1);
 
         $s3 = Storage::disk('s3');
 
+        // 1. Fetch active Gallery items with roomType
         $galleryItems = Gallery::with('roomType')
             ->where('is_active', true)
             ->get()
@@ -102,7 +107,6 @@ public function index()
                 return [
                     'id' => 'gal-'.$item->id,
                     'type' => $item->type,
-                    // If it's already a full URL (Facebook link), use it. Otherwise, get S3 URL.
                     'url' => str_starts_with($item->url, 'http') ? $item->url : $s3->url($item->url),
                     'thumbnail' => $item->thumbnail ? $s3->url($item->thumbnail) : null,
                     'title' => $item->title,
@@ -137,7 +141,7 @@ public function index()
                         'id' => "room-{$room->id}-vid-{$index}",
                         'type' => 'video',
                         'url' => $s3->url($path),
-                        'thumbnail' => $s3->url($room->pictures[0]), // You could add a default thumb here
+                        'thumbnail' => $s3->url($room->pictures[0] ?? null),
                         'title' => "Room {$room->room_number} Tour",
                         'category' => $room->roomType->name ?? 'Rooms',
                         'description' => "Video walkthrough of room {$room->room_number}",
@@ -146,19 +150,30 @@ public function index()
             }
         }
 
-        // 3. Merge both collections
-        $allItems = collect($galleryItems)->merge($roomMedia);
+        // 3. Merge both collections into one
+        $allItems = collect($galleryItems)->merge($roomMedia)->values();
 
-        // 4. Get a list of rooms for the UI prop (if needed for other features)
+        // 4. Paginate the merged collection manually
+        $total = $allItems->count();
+        $paginatedItems = $allItems->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $paginator = new LengthAwarePaginator(
+            $paginatedItems,
+            $total,
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // 5. Get a list of rooms for the UI prop
         $roomList = $rooms->map(fn ($r) => [
             'id' => $r->id,
             'name' => 'Room '.$r->room_number,
         ]);
 
         return Inertia::render('Rooms/Gallery', [
-            'items' => $allItems,
+            'items' => $paginator,
             'rooms' => $roomList,
-            // Pass dynamic categories to replace the hardcoded constant in React
             'dbCategories' => RoomType::pluck('name')->toArray(),
         ]);
     }

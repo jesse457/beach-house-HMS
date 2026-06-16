@@ -524,12 +524,7 @@ export default function Home({
                                     Browse Rooms
                                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                 </Link>
-                                <Link
-                                    href="/register"
-                                    className="inline-flex items-center gap-2 border-2 border-[#2D5016] text-[#2D5016] font-semibold px-8 py-4 rounded-xl hover:bg-[#2D5016] hover:text-[#F5F2E8] transition-all"
-                                >
-                                    Create Account
-                                </Link>
+                               
                             </div>
                         </Reveal>
                     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Head } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Play, ChevronLeft, ChevronRight, Images, Video, Compass } from 'lucide-react'
 
@@ -22,8 +22,23 @@ interface Room {
   name: string;
 }
 
+interface PaginatorLink {
+  url: string | null;
+  label: string;
+  active: boolean;
+}
+
 interface GalleryProps {
-  items: GalleryItem[];
+  items: {
+    data: GalleryItem[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    links: PaginatorLink[];
+  };
   rooms: Room[];
   dbCategories: string[]; // Dynamic categories from RoomType model
 }
@@ -42,23 +57,40 @@ const Reveal = ({ children, className = "" }: { children: React.ReactNode; class
 );
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-export default function Gallery({ items = [], rooms = [], dbCategories = [] }: GalleryProps) {
+export default function Gallery({ items, rooms = [], dbCategories = [] }: GalleryProps) {
   const [tab, setTab] = useState<'all' | 'photos' | 'videos'>('all')
   const [activeCategory, setActiveCategory] = useState('All')
   const [lightbox, setLightbox] = useState<{ item: GalleryItem; index: number } | null>(null)
 
+  // Extract paginated data
+  const galleryData = items?.data ?? []
+  const currentPage = items?.current_page ?? 1
+  const lastPage = items?.last_page ?? 1
+  const total = items?.total ?? 0
+  const links = items?.links ?? []
+
   // Combine general category headers with dynamic RoomTypes
   const allCategories = ['All', ...dbCategories];
 
-  // Media Filtering Logic
-  const photos = items.filter((i) => i.type === 'image')
-  const videos = items.filter((i) => i.type === 'video')
+  // Media Filtering Logic (client-side filtering of current page)
+  const photos = galleryData.filter((i) => i.type === 'image')
+  const videos = galleryData.filter((i) => i.type === 'video')
 
-  const baseItems = tab === 'photos' ? photos : tab === 'videos' ? videos : items
+  const baseItems = tab === 'photos' ? photos : tab === 'videos' ? videos : galleryData
 
   const filtered = baseItems.filter((item) =>
     activeCategory === 'All' || item.category === activeCategory
   )
+
+  // Page navigation handler
+  const goToPage = (page: number) => {
+    if (page < 1 || page > lastPage) return
+    router.get(
+      window.location.pathname,
+      { page },
+      { preserveState: true, preserveScroll: true, replace: true }
+    )
+  }
 
   // Lightbox Navigation
   const goNext = useCallback(() => {
@@ -124,7 +156,7 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
           <Reveal className="pt-10 pb-4">
             <div className="flex flex-wrap items-center gap-2 bg-white/80 backdrop-blur-md rounded-2xl p-1.5 border border-[#2D5016]/10 w-fit shadow-xs">
               {[
-                { key: 'all', label: 'All Media', count: items.length, icon: null },
+                { key: 'all', label: 'All Media', count: total, icon: null },
                 { key: 'photos', label: 'Photos', count: photos.length, icon: Images },
                 { key: 'videos', label: 'Videos', count: videos.length, icon: Video },
               ].map((t) => (
@@ -193,6 +225,67 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
               )}
             </AnimatePresence>
           </div>
+
+          {/* ── PAGINATION ─────────────────────────────────────────────────── */}
+          {lastPage > 1 && (
+            <Reveal className="mt-12">
+              <div className="flex items-center justify-center gap-2">
+                {/* Previous */}
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="p-2 rounded-lg border border-[#2D5016]/20 text-[#2D5016] hover:bg-[#2D5016]/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                {/* Page Numbers */}
+                {links
+                  .filter((link) => !link.label.includes('Previous') && !link.label.includes('Next'))
+                  .map((link, i) => {
+                    // Parse numeric page from label (handles "1", "2", etc., skips "...")
+                    const pageNum = parseInt(link.label, 10)
+                    if (isNaN(pageNum)) {
+                      return (
+                        <span key={`dots-${i}`} className="px-2 text-neutral-400 select-none">
+                          …
+                        </span>
+                      )
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => goToPage(pageNum)}
+                        className={`min-w-[40px] h-10 rounded-lg text-sm font-bold transition-all duration-200 ${
+                          link.active
+                            ? 'bg-[#2D5016] text-[#F5F2E8] shadow-sm'
+                            : 'text-neutral-600 hover:bg-[#2D5016]/10 hover:text-[#2D5016]'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+
+                {/* Next */}
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= lastPage}
+                  className="p-2 rounded-lg border border-[#2D5016]/20 text-[#2D5016] hover:bg-[#2D5016]/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+
+              {/* Page info */}
+              <p className="text-center text-xs text-neutral-400 mt-3 font-medium tracking-wide">
+                Page {currentPage} of {lastPage}
+                {total > 0 && ` · ${total} total items`}
+              </p>
+            </Reveal>
+          )}
         </div>
 
         {/* ── LIGHTBOX ───────────────────────────────────────────────────── */}

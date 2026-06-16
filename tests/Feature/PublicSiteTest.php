@@ -136,15 +136,39 @@ test('room show returns 404 for non-existent room', function () {
 // Gallery Page
 // ============================================
 
-test('gallery page returns 200', function () {
+test('gallery page returns 200 with paginated items', function () {
     $response = $this->get('/gallery');
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
         ->component('Rooms/Gallery')
         ->has('items')
+        ->has('items.data')
+        ->has('items.current_page')
+        ->has('items.last_page')
+        ->has('items.per_page')
+        ->has('items.total')
+        ->has('items.links')
         ->has('rooms')
         ->has('dbCategories')
+    );
+});
+
+test('gallery page respects page query parameter', function () {
+    // Request page 1
+    $response = $this->get('/gallery?page=1');
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->where('items.current_page', 1)
+    );
+
+    // Request page 999 (beyond available data) should still render
+    $response2 = $this->get('/gallery?page=999');
+
+    $response2->assertStatus(200);
+    $response2->assertInertia(fn ($page) => $page
+        ->component('Rooms/Gallery')
     );
 });
 
