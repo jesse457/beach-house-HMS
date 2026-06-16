@@ -18,6 +18,7 @@ class TeamsTable
         return $table
             ->columns([
                 ImageColumn::make('image')
+                ->disk('s3')
                     ->label('Photo')
                     ->circular(),
 

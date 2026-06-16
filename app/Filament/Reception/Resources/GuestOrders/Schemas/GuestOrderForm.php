@@ -81,33 +81,33 @@ class GuestOrderForm
                                         ->extraAttributes(['class' => 'font-bold text-xl text-primary-600']),
 
                                     ToggleButtons::make('status')
-                                        ->options(['pending' => 'Pending', 'served' => 'Served', 'paid' => 'Paid'])
+                                        ->options(['pending' => 'Pending', 'served' => 'Served'])
                                         ->default('pending')
                                         ->inline()
                                         ->required(),
                                 ]),
 
-                            Section::make('Process Payment Now')
-                                ->description('Record payment for this specific order.')
-                                ->icon('heroicon-m-banknotes')
-                                ->schema([
-                                    TextInput::make('payment_amount')
-                                        ->label('Amount Paid')
-                                        ->numeric()
-                                        ->prefix('XAF')
-                                        ->live()
-                                        ->placeholder(fn(Get $get) => $get('total_amount'))
-                                        ->dehydrated(), // Important: passes value to Page class
+                            // Section::make('Process Payment Now')
+                            //     ->description('Record payment for this specific order.')
+                            //     ->icon('heroicon-m-banknotes')
+                            //     ->schema([
+                            //         TextInput::make('payment_amount')
+                            //             ->label('Amount Paid')
+                            //             ->numeric()
+                            //             ->prefix('XAF')
+                            //             ->live()
+                            //             ->placeholder(fn(Get $get) => $get('total_amount'))
+                            //             ->dehydrated(), // Important: passes value to Page class
 
-                                    Select::make('payment_method')
-                                        ->options(['cash' => 'Cash', 'credit_card' => 'Credit Card', 'bank_transfer' => 'Bank Transfer'])
-                                        ->requiredWith('payment_amount')
-                                        ->dehydrated(),
+                            //         Select::make('payment_method')
+                            //             ->options(['cash' => 'Cash', 'credit_card' => 'Credit Card', 'bank_transfer' => 'Bank Transfer'])
+                            //             ->requiredWith('payment_amount')
+                            //             ->dehydrated(),
 
-                                    Placeholder::make('payment_hint')
-                                        ->content('Filling this will create a new Payment receipt.')
-                                        ->extraAttributes(['class' => 'text-xs italic text-gray-500']),
-                                ]),
+                            //         Placeholder::make('payment_hint')
+                            //             ->content('Filling this will create a new Payment receipt.')
+                            //             ->extraAttributes(['class' => 'text-xs italic text-gray-500']),
+                            //     ]),
                         ])->columnSpan(4),
                 ])->columnSpan(['default' => 12, 'lg' => 4]),
         ]);
@@ -117,7 +117,7 @@ class GuestOrderForm
     {
         $unitPrice = (float) ($get('unit_price') ?? 0);
         $quantity = (float) ($get('quantity') ?? 0);
-        $set('total_price', number_format($unitPrice * $quantity, 2, '.', ''));
+        $set('total_price', round($unitPrice * $quantity, 2));
         self::calculateGrandTotal($get, $set);
     }
 
@@ -126,7 +126,8 @@ class GuestOrderForm
         $items = $get('../../items') ?? $get('items') ?? [];
         $grandTotal = collect($items)->reduce(fn ($carry, $item) => $carry + (float) ($item['total_price'] ?? 0), 0);
 
-        $set('../../total_amount', number_format($grandTotal, 2, '.', ''));
-        $set('total_amount', number_format($grandTotal, 2, '.', ''));
+        $total = round($grandTotal, 2);
+        $set('../../total_amount', $total);
+        $set('total_amount', $total);
     }
 }

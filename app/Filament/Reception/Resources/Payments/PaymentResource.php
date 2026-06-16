@@ -11,7 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+
 
 class PaymentResource extends Resource
 {
@@ -38,30 +38,12 @@ class PaymentResource extends Resource
         ];
     }
 
-    public static function canCreate(): bool
-    {
-        return false; // Disables the "Create" button and page
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return false; // Disables the "Edit" button and page
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return false; // Disables deleting individual records
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return false; // Disables bulk delete actions
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListPayments::route('/'),
+            'create' => \App\Filament\Reception\Resources\Payments\Pages\CreatePayment::route('/create'),
+            'edit' => \App\Filament\Reception\Resources\Payments\Pages\EditPayment::route('/{record}/edit'),
         ];
     }
 }

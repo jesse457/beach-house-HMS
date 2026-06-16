@@ -45,7 +45,7 @@ class BookingForm
                                     ->options(BookingType::class)
                                     ->default(BookingType::Stay)
                                     ->disabled(fn (string $context) => $context === 'edit')
-                                    ->live()
+                                    ->live() // Triggers the UI refresh
                                     ->required()
                                     ->columnSpanFull(),
 
@@ -70,11 +70,11 @@ class BookingForm
                                     ->columnSpanFull(),
                             ]),
 
-                        // --- SECTION 2: ROOM STAY UI (Visible only for Stay) ---
+                        // --- SECTION 2: ROOM STAY UI (Visible only for Stay Enum) ---
                         Section::make('Stay Information')
                             ->description('Manage overnight guest accommodations.')
                             ->icon('heroicon-m-moon')
-                            ->visible(fn (Get $get) => $get('booking_type') === BookingType::Stay->value)
+                            ->visible(fn (Get $get) => $get('booking_type') === BookingType::Stay || $get('booking_type') === BookingType::Stay->value)
                             ->schema([
                                 Grid::make(2)->schema([
                                     DateTimePicker::make('checked_in_at')
@@ -94,11 +94,11 @@ class BookingForm
                                 ]),
                             ]),
 
-                        // --- SECTION 3: EVENT RENTAL UI (Visible only for Event) ---
+                        // --- SECTION 3: EVENT RENTAL UI (Visible only for Event Enum) ---
                         Section::make('Event Venue Selection')
                             ->description('Manage hall rentals and event spaces.')
                             ->icon('heroicon-m-sparkles')
-                            ->visible(fn (Get $get) => $get('booking_type') === BookingType::Event->value)
+                            ->visible(fn (Get $get) => $get('booking_type') === BookingType::Event || $get('booking_type') === BookingType::Event->value)
                             ->schema([
                                 Grid::make(2)->schema([
                                     DateTimePicker::make('checked_in_at')
@@ -114,9 +114,9 @@ class BookingForm
                                 ]),
                             ]),
 
-                        // --- SECTION 4: ROOM/HALL SELECTOR (Hidden for Walk-ins) ---
-                        Section::make(fn (Get $get) => $get('booking_type') === BookingType::Event->value ? 'Halls & Spaces' : 'Assigned Rooms')
-                            ->visible(fn (Get $get) => $get('booking_type') !== BookingType::WalkIn->value)
+                        // --- SECTION 4: ROOM/HALL SELECTOR ---
+                        Section::make(fn (Get $get) => ($get('booking_type') === BookingType::Event || $get('booking_type') === BookingType::Event->value) ? 'Halls & Spaces' : 'Assigned Rooms')
+                            ->visible(fn (Get $get) => $get('booking_type') !== BookingType::WalkIn && $get('booking_type') !== BookingType::WalkIn->value)
                             ->schema([
                                 Select::make('rooms')
                                     ->hiddenLabel()
@@ -129,8 +129,8 @@ class BookingForm
                                                     $q->where('is_occupied', false);
                                                     if ($record) $q->orWhereHas('bookings', fn ($inner) => $inner->where('bookings.id', $record->id));
                                                 })
-                                                ->when($type === BookingType::Event->value, fn ($q) => $q->whereHas('roomType', fn ($sq) => $sq->where('category', 'event')))
-                                                ->when($type === BookingType::Stay->value, fn ($q) => $q->whereHas('roomType', fn ($sq) => $sq->where('category', '!=', 'hall')));
+                                                ->when($type === BookingType::Event || $type === BookingType::Event->value, fn ($q) => $q->whereHas('roomType', fn ($sq) => $sq->where('category', 'event')))
+                                                ->when($type === BookingType::Stay || $type === BookingType::Stay->value, fn ($q) => $q->whereHas('roomType', fn ($sq) => $sq->where('category', '!=', 'hall')));
                                         }
                                     )
                                     ->multiple()
@@ -145,12 +145,11 @@ class BookingForm
                         // --- SECTION 5: WALK-IN / AMENITIES UI ---
                         Section::make('Services & Amenities')
                             ->icon('heroicon-m-bolt')
-                            ->description(fn (Get $get) => $get('booking_type') === BookingType::WalkIn->value ? 'Direct service sale for non-staying guests.' : 'Additional services for this guest.')
+                            ->description(fn (Get $get) => ($get('booking_type') === BookingType::WalkIn || $get('booking_type') === BookingType::WalkIn->value) ? 'Direct service sale for non-staying guests.' : 'Additional services for this guest.')
                             ->schema([
-                                // For Walk-ins, we only need a single Visit Time
                                 DateTimePicker::make('checked_in_at')
                                     ->label('Visit Date & Time')
-                                    ->hidden(fn (Get $get) => $get('booking_type') !== BookingType::WalkIn->value)
+                                    ->visible(fn (Get $get) => $get('booking_type') === BookingType::WalkIn || $get('booking_type') === BookingType::WalkIn->value)
                                     ->default(now())
                                     ->required()
                                     ->live(),
@@ -164,7 +163,7 @@ class BookingForm
                                             ->live()
                                             ->afterStateUpdated(fn($state, Set $set) => $set('price_at_booking', Amenity::find($state)?->price ?? 0)),
                                         TextInput::make('quantity')->numeric()->default(1)->required()->live(),
-                                        TextInput::make('price_at_booking')->label('Unit Price')->prefix('XAF')->readOnly()->dehydrated(),
+                                        TextInput::make('price_at_booking')->label('Unit Price')->prefix('XAF')->dehydrated(),
                                     ])
                                     ->columns(3)
                                     ->live()
@@ -181,17 +180,13 @@ class BookingForm
                         Section::make('Financial Summary')
                             ->schema([
                                 TextInput::make('total_price')
-                                    ->label('Total Cost')
+                                    ->label('Total Cost (Negotiable)')
                                     ->numeric()
                                     ->prefix('XAF')
-                                    ->readOnly()
+                                    ->live()
                                     ->dehydrated()
+                                    ->hintIcon('heroicon-m-pencil', 'Auto-calculated — edit to set a negotiated price')
                                     ->extraAttributes(['class' => 'font-bold text-lg text-primary-600']),
-
-                                Select::make('payment_status')
-                                    ->options(['unpaid' => 'Unpaid', 'partial' => 'Partial Payment', 'paid' => 'Fully Paid'])
-                                    ->required()
-                                    ->default('unpaid'),
 
                                 Placeholder::make('balance')
                                     ->label('Current Debt')
@@ -244,8 +239,8 @@ class BookingForm
         $grandTotal = 0;
         $type = $get('booking_type');
 
-        // MODE 1: Rooms/Halls Logic
-        if ($type !== BookingType::WalkIn->value) {
+        // Logic for Non-WalkIn types
+        if ($type !== BookingType::WalkIn && $type !== BookingType::WalkIn->value) {
             $in = $get('checked_in_at');
             $out = $get('checked_out_at');
             $roomIds = $get('rooms');
@@ -258,12 +253,11 @@ class BookingForm
             }
         }
 
-        // MODE 2: Amenities Logic (Always adds to total regardless of type)
         $amenityData = $get('amenityBookings') ?? [];
         foreach ($amenityData as $item) {
             $grandTotal += ((int)($item['quantity'] ?? 1) * (float)($item['price_at_booking'] ?? 0));
         }
 
-        $set('total_price', $grandTotal);
+        $set('total_price', round($grandTotal, 2));
     }
 }

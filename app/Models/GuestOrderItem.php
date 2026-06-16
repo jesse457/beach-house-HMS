@@ -47,8 +47,15 @@ use HasFactory;
         });
 
         static::saved(function ($item) {
-            // After an item is saved, update the parent's total amount
-            $item->guestOrder->refreshTotal();
+            if ($item->guestOrder) {
+                $item->guestOrder->refreshTotal();
+            }
+        });
+
+        static::deleted(function ($item) {
+            if ($item->guestOrder) {
+                $item->guestOrder->refreshTotal();
+            }
         });
     }
 }

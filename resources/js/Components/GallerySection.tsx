@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Play, Pause, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 
 interface GalleryItem {
     id: number | string;
@@ -13,201 +14,226 @@ interface GalleryItem {
 
 interface GalleryProps {
     items: GalleryItem[];
-    galleryLink?: string; // Added prop for the gallery page URL
+    galleryLink?: string;
 }
 
-const GallerySection = ({ items, galleryLink = "/gallery" }: GalleryProps) => {
+const GallerySection = ({ items = [], galleryLink = "/gallery" }: GalleryProps) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
-    const[isAutoPlaying, setIsAutoPlaying] = useState(true);
-
-    const slideVariants = {
-        enter: (direction: number) => ({
-            opacity: 0,
-            scale: 1.1,
-            filter: "blur(10px)"
-        }),
-        center: {
-            zIndex: 1,
-            opacity: 1,
-            scale: 1,
-            filter: "blur(0px)",
-            transition: {
-                opacity: { duration: 0.8 },
-                scale: { duration: 1.2, ease: "easeOut" },
-                filter: { duration: 0.8 }
-            }
-        },
-        exit: (direction: number) => ({
-            zIndex: 0,
-            opacity: 0,
-            scale: 0.95,
-            transition: { duration: 0.8 }
-        })
-    };
+    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
     const paginate = useCallback((newDirection: number) => {
+        if (items.length === 0) return;
         setDirection(newDirection);
         setCurrentIndex((prevIndex) => (prevIndex + newDirection + items.length) % items.length);
     }, [items.length]);
 
     useEffect(() => {
-        if (!isAutoPlaying) return;
+        if (!isAutoPlaying || items.length === 0) return;
         const timer = setInterval(() => paginate(1), 6000);
         return () => clearInterval(timer);
-    }, [isAutoPlaying, paginate]);
+    }, [isAutoPlaying, paginate, items.length]);
 
-    if (!items.length) return null;
+    // ── EMPTY STATE UI ──
+    if (items.length === 0) {
+        return (
+            <section className="py-24 bg-[#F5F2E8]">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <span className="text-[#6B9E3F] text-xs font-semibold uppercase tracking-[0.2em]">
+                            Gallery
+                        </span>
+                        <h2 className="mt-3 text-4xl font-bold text-[#2D5016]">
+                            A Visual Preview
+                        </h2>
+                    </div>
+
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex flex-col items-center justify-center border border-[#2D5016]/10 rounded-[2rem] p-16 bg-[#EAE6D6]/40 shadow-sm"
+                    >
+                        <div className="p-4 bg-[#2D5016]/10 rounded-full mb-4 text-[#2D5016]">
+                            <ImageIcon size={40} strokeWidth={1} />
+                        </div>
+                        <h3 className="text-lg font-bold text-[#2D5016]">No Media Available</h3>
+                        <p className="text-neutral-500 mt-2 text-center max-w-xs text-sm">
+                            Our physical spaces are currently being photographed. Check back soon.
+                        </p>
+                    </motion.div>
+                </div>
+            </section>
+        );
+    }
+
+    const currentItem = items[currentIndex];
+    const padNumber = (num: number) => String(num + 1).padStart(2, '0');
 
     return (
-        <section className="relative min-h-[80vh] flex items-center bg-[#2D5016] overflow-hidden">
-            {/* ── BACKGROUND MEDIA ── */}
-            <div className="absolute inset-0">
-                <AnimatePresence initial={false} custom={direction}>
-                    <motion.div
-                        key={currentIndex}
-                        custom={direction}
-                        variants={slideVariants}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        className="absolute inset-0"
-                    >
-                        {items[currentIndex].type === 'video' ? (
-                            <video
-                                src={items[currentIndex].url}
-                                autoPlay muted loop playsInline
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <img
-                                src={items[currentIndex].url}
-                                alt={items[currentIndex].title}
-                                className="w-full h-full object-cover"
-                            />
-                        )}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
+        <section className="relative min-h-[85vh] lg:min-h-[90vh] bg-[#2D5016] flex items-center py-20 lg:py-0 overflow-hidden">
+            {/* Background Texture Blur */}
+            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#6B9E3F]/15 blur-[120px] pointer-events-none" />
 
-            {/* ── HERO-STYLE GRADIENT OVERLAY ── */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2D5016]/95 via-[#2D5016]/70 to-[#1a3009]/80 z-10" />
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
-            {/* ── DECORATIVE BLUR BLOBS ── */}
-            <div className="absolute top-20 right-10 w-96 h-96 rounded-full bg-[#6B9E3F]/20 blur-3xl pointer-events-none z-10" />
-            <div className="absolute bottom-20 left-10 w-64 h-64 rounded-full bg-[#F5F2E8]/10 blur-3xl pointer-events-none z-10" />
+                    {/* ── LEFT COLUMN: EDITORIAL CONTENT & CONTROLS ── */}
+                    <div className="lg:col-span-5 flex flex-col justify-between h-full py-4 text-center lg:text-left">
+                        <div>
+                            <span className="text-[#C8DBA8] text-xs font-semibold uppercase tracking-[0.25em]">
+                                Experience
+                            </span>
 
-            {/* ── CONTENT ── */}
-            <div className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full py-20 mt-10">
-                <div className="max-w-4xl">
-                    {/* Category Badge */}
-                    <motion.div
-                        key={`cat-${currentIndex}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2 bg-[#F5F2E8]/15 border border-[#F5F2E8]/25 rounded-full px-4 py-1.5 text-[#C8DBA8] text-xs font-medium mb-6 backdrop-blur-sm shadow-sm"
-                    >
-                        <span className="h-2 w-2 rounded-full bg-[#6B9E3F] animate-pulse" />
-                        {items[currentIndex].category}
-                    </motion.div>
+                            <h2 className="mt-3 text-4xl sm:text-5xl font-bold text-[#F5F2E8] tracking-tight leading-[1.15]">
+                                Natural <br className="hidden lg:block"/>
+                                <span className="text-[#C8DBA8] italic font-normal">Sanctuary</span>
+                            </h2>
 
-                    {/* Title */}
-                    <motion.h2
-                        key={`title-${currentIndex}`}
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, ease:[0.22, 1, 0.36, 1] }}
-                        className="text-4xl sm:text-5xl lg:text-7xl font-bold text-[#F5F2E8] leading-[1.1] tracking-tight mb-12 italic drop-shadow-lg"
-                    >
-                        {items[currentIndex].title}
-                    </motion.h2>
+                            {/* Divider Line */}
+                            <div className="w-16 h-[1px] bg-[#C8DBA8]/30 my-8 mx-auto lg:mx-0" />
 
-                    {/* ── CONTROLS & CTA ROW ── */}
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-10">
-
-                        {/* Interactive Controls */}
-                        <div className="flex items-center gap-4 sm:gap-6">
-                            {/* Navigation Buttons */}
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => { paginate(-1); setIsAutoPlaying(false); }}
-                                    aria-label="Previous slide"
-                                    className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center rounded-xl border border-[#F5F2E8]/30 text-[#F5F2E8] hover:bg-[#F5F2E8]/20 hover:scale-105 transition-all backdrop-blur-sm"
-                                >
-                                    <ChevronLeft size={24} />
-                                </button>
-
-                                {/* Play/Pause Toggle */}
-                                <button
-                                    onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                                    aria-label={isAutoPlaying ? "Pause slideshow" : "Play slideshow"}
-                                    className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center rounded-xl border border-[#F5F2E8]/30 text-[#F5F2E8] hover:bg-[#F5F2E8]/20 hover:scale-105 transition-all backdrop-blur-sm"
-                                >
-                                    {isAutoPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-                                </button>
-
-                                <button
-                                    onClick={() => { paginate(1); setIsAutoPlaying(false); }}
-                                    aria-label="Next slide"
-                                    className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center rounded-xl border border-[#F5F2E8]/30 text-[#F5F2E8] hover:bg-[#F5F2E8]/20 hover:scale-105 transition-all backdrop-blur-sm"
-                                >
-                                    <ChevronRight size={24} />
-                                </button>
+                            {/* Slide Dynamic Counter */}
+                            <div className="flex items-center justify-center lg:justify-start gap-4 mb-4">
+                                <span className="text-2xl font-light text-[#F5F2E8] tracking-widest">
+                                    {padNumber(currentIndex)}
+                                </span>
+                                <span className="h-[1px] w-8 bg-[#C8DBA8]/40" />
+                                <span className="text-sm font-medium text-[#C8DBA8]/60">
+                                    {padNumber(items.length - 1)}
+                                </span>
                             </div>
 
-                            <div className="hidden sm:block w-px h-10 bg-[#F5F2E8]/20" />
-
-                            {/* ── IMAGE THUMBNAIL TRACKER ── */}
-                            <div className="hidden sm:flex gap-3 items-center">
-                                {items.map((item, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => { setCurrentIndex(idx); setIsAutoPlaying(false); }}
-                                        className={`relative overflow-hidden rounded-lg transition-all duration-500 border-2 ${
-                                            currentIndex === idx
-                                                ? 'w-16 h-12 border-[#6B9E3F] opacity-100 shadow-[0_0_15px_rgba(107,158,63,0.5)]'
-                                                : 'w-10 h-8 border-transparent opacity-40 hover:opacity-100 hover:w-12'
-                                        }`}
+                            {/* Staggered Title and Description Box */}
+                            <div className="min-h-[140px] flex flex-col justify-start">
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentIndex}
+                                        initial={{ opacity: 0, y: 15 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -15 }}
+                                        transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
                                     >
-                                        <img
-                                            src={item.thumbnail}
-                                            alt={`Go to slide ${idx + 1}`}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        {item.type === 'video' && (
-                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                <Play size={12} className="text-white" fill="currentColor" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
+                                        <span className="text-xs font-semibold tracking-wider text-[#6B9E3F] uppercase bg-[#F5F2E8]/10 rounded-full px-3 py-1.5">
+                                            {currentItem.category}
+                                        </span>
+                                        <h3 className="mt-4 text-xl sm:text-2xl font-bold text-[#F5F2E8]">
+                                            {currentItem.title}
+                                        </h3>
+                                    </motion.div>
+                                </AnimatePresence>
                             </div>
                         </div>
 
-                        {/* ── GALLERY LINK CTA ── */}
-                        <a
-                            href={galleryLink}
-                            className="group inline-flex items-center justify-center gap-3 bg-[#6B9E3F] text-[#F5F2E8] px-8 py-3.5 sm:py-4 rounded-xl font-semibold hover:bg-[#588531] transition-all duration-300 shadow-lg hover:shadow-[#6B9E3F]/25"
-                        >
-                            View Full Gallery
-                            <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform duration-300" />
-                        </a>
+                        {/* Controls & CTA wrapper */}
+                        <div className="mt-8 flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start">
+                            {/* Direction Arrows */}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => { paginate(-1); setIsAutoPlaying(false); }}
+                                    className="h-12 w-12 flex items-center justify-center rounded-full border border-[#C8DBA8]/20 text-[#F5F2E8] hover:bg-[#F5F2E8]/10 hover:border-[#F5F2E8] transition-all"
+                                    aria-label="Previous Slide"
+                                >
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <button
+                                    onClick={() => { paginate(1); setIsAutoPlaying(false); }}
+                                    className="h-12 w-12 flex items-center justify-center rounded-full border border-[#C8DBA8]/20 text-[#F5F2E8] hover:bg-[#F5F2E8]/10 hover:border-[#F5F2E8] transition-all"
+                                    aria-label="Next Slide"
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
 
+                            {/* Link Button */}
+                            <Link
+                                href={galleryLink}
+                                className="group inline-flex items-center gap-2.5 text-sm font-semibold text-[#F5F2E8] hover:text-[#C8DBA8] transition-colors"
+                            >
+                                Explore Full Gallery
+                                <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
+                            </Link>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            {/* ── SMART PROGRESS BAR ── */}
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/20 z-30">
-                {isAutoPlaying && (
-                    <motion.div
-                        key={currentIndex} // Retriggers animation on slide change
-                        initial={{ width: 0 }}
-                        animate={{ width: '100%' }}
-                        transition={{ duration: 6, ease: "linear" }}
-                        className="h-full bg-[#6B9E3F] shadow-[0_0_10px_#6B9E3F]"
-                    />
-                )}
+                    {/* ── RIGHT COLUMN: FLOATING ARCHITECTURAL CANVAS ── */}
+                    <div className="lg:col-span-7 relative h-[380px] sm:h-[480px] lg:h-[550px] w-full">
+                        {/* Decorative Background Offset Layer */}
+                        <div className="absolute inset-4 rounded-[2rem] sm:rounded-[2.5rem] bg-[#1E360F] translate-x-4 translate-y-4 -z-10 shadow-2xl" />
+
+                        {/* Active Image Deck Viewport */}
+                        <div className="absolute inset-0 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden bg-[#1E360F] shadow-xl">
+                            <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                                <motion.div
+                                    key={currentIndex}
+                                    custom={direction}
+                                    variants={{
+                                        enter: (dir) => ({
+                                            x: dir > 0 ? "100%" : "-100%",
+                                            scale: 1.05,
+                                            opacity: 0.8
+                                        }),
+                                        center: {
+                                            x: 0,
+                                            scale: 1,
+                                            opacity: 1,
+                                            transition: {
+                                                x: { type: "spring", stiffness: 300, damping: 32 },
+                                                opacity: { duration: 0.35 },
+                                                scale: { duration: 0.5, ease: "easeOut" }
+                                            }
+                                        },
+                                        exit: (dir) => ({
+                                            x: dir > 0 ? "-35%" : "35%",
+                                            scale: 0.98,
+                                            opacity: 0,
+                                            transition: {
+                                                x: { type: "spring", stiffness: 300, damping: 32 },
+                                                opacity: { duration: 0.3 }
+                                            }
+                                        })
+                                    }}
+                                    initial="enter"
+                                    animate="center"
+                                    exit="exit"
+                                    className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    dragElastic={0.35}
+                                    onDragEnd={(e, info) => {
+                                        const swipeDistance = info.offset.x;
+                                        if (swipeDistance < -60) {
+                                            paginate(1);
+                                            setIsAutoPlaying(false);
+                                        } else if (swipeDistance > 60) {
+                                            paginate(-1);
+                                            setIsAutoPlaying(false);
+                                        }
+                                    }}
+                                >
+                                    {currentItem.type === 'video' ? (
+                                        <video
+                                            src={currentItem.url}
+                                            autoPlay
+                                            muted
+                                            loop
+                                            playsInline
+                                            className="w-full h-full object-cover select-none pointer-events-none"
+                                        />
+                                    ) : (
+                                        <motion.img
+                                            animate={{ scale: [1, 1.05] }}
+                                            transition={{ duration: 6, ease: "easeOut" }}
+                                            src={currentItem.url}
+                                            alt={currentItem.title}
+                                            className="w-full h-full object-cover select-none pointer-events-none"
+                                        />
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </section>
     );

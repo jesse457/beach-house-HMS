@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Head, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserCheck, UserPlus, Mail, Users } from 'lucide-react'
+import { UserCheck, UserPlus, Users, ArrowLeft } from 'lucide-react'
 import Layout from '../../Layouts/Layout'
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
@@ -11,45 +11,40 @@ interface TeamMember {
   role: string;
   department: string;
   bio: string;
-  image: string;
+  image: string; // S3 URL
 }
 
 interface TeamProps {
-  members: TeamMember[]; // These come from DB
+  members: TeamMember[];
   followedIds?: (string | number)[];
 }
 
-const DEPARTMENTS = ['All', 'Management', 'Operations', 'Hospitality', 'Support']
+// ─── REVEAL ANIMATION ───────────────────────────────────────────────────────
+const Reveal = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <motion.div
+    className={className}
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
+  >
+    {children}
+  </motion.div>
+);
 
-// ─── STATIC OWNER DATA ──────────────────────────────────────────────────────
-const STATIC_OWNER: TeamMember = {
-  id: 'owner-static',
-  name: 'His Majesty/Senator Ekoko Mukete',
-  role: 'Founder & Owner',
-  department: 'Leadership',
-  bio: 'Senator Ekoko Mukete founded Beach House in the year ... with a vision to create a sanctuary where luxury meets nature. With over 20 years in the hospitality industry across Cameroon, Turkey, and Dubai, he personally oversees every detail to ensure guests receive nothing short of excellence.',
-  image: 'https://tse4.mm.bing.net/th/id/OIP.uy10XXpA_6DneEyzdn0l7QHaJ4?rs=1&pid=ImgDetMain&o=7&rm=3',
-};
-
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 export default function Team({ members = [], followedIds = [] }: TeamProps) {
   const { auth } = usePage<any>().props;
   const isLoggedIn = !!auth?.user;
 
-  const [dept, setDept] = useState('All');
   const [localFollows, setLocalFollows] = useState<Set<string | number>>(new Set(followedIds));
   const [processingId, setProcessingId] = useState<string | number | null>(null);
-
-  // Filter ONLY the DB members. The static owner is always visible.
-  const filteredDBMembers = members.filter((m) => dept === 'All' || m.department === dept);
 
   function handleToggleFollow(member: TeamMember) {
     if (!isLoggedIn) {
         router.visit('/login');
         return;
     }
-    // If you don't want people following the static owner in the DB,
-    // you can return early here or handle it via a specific route.
-    if (member.id === 'owner-static') return;
 
     setProcessingId(member.id);
     router.post(`/team/${member.id}/follow`, {}, {
@@ -67,106 +62,97 @@ export default function Team({ members = [], followedIds = [] }: TeamProps) {
 
   return (
     <Layout>
-      <Head title="Meet the Team | Beach House Botaland" />
+      <Head title="Meet our Dedicated Team | Beach House Botaland" />
 
       <main className="min-h-screen bg-[#F5F2E8]">
-        {/* Hero Section */}
+        {/* ── HERO SECTION ───────────────────────────────────────────── */}
         <section className="relative bg-[#2D5016] py-28 overflow-hidden">
-          <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1600&q=80')" }} />
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#F5F2E8] to-transparent" />
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-15"
+            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=80')" }}
+          />
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#F5F2E8] to-transparent" />
           <div className="relative mx-auto max-w-4xl px-4 text-center">
-            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}>
-              <span className="text-[#6B9E3F] text-sm font-semibold uppercase tracking-widest">Our People</span>
-              <h1 className="mt-3 text-5xl font-bold text-[#F5F2E8]">Meet the Team</h1>
+            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+              <span className="text-[#6B9E3F] text-sm font-semibold uppercase tracking-widest block mb-3">
+                Our Family
+              </span>
+              <h1 className="text-5xl sm:text-6xl font-bold text-[#F5F2E8] font-serif italic leading-tight">
+                Meet the Team
+              </h1>
+              <p className="mt-5 text-[#C8DBA8] text-lg max-w-xl mx-auto">
+                The passionate individuals working behind the scenes to make your stay unforgettable.
+              </p>
             </motion.div>
           </div>
         </section>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-28">
+        {/* ── TEAM GRID AREA ─────────────────────────────────────────── */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-28 pt-8">
 
-          {/* STATIC OWNER CARD (Never Changes) */}
-          <div className="mt-[-2rem] mb-16 bg-[#2D5016] rounded-3xl overflow-hidden shadow-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="relative h-72 md:h-auto min-h-[320px]">
-                <img src={STATIC_OWNER.image} alt={STATIC_OWNER.name} className="w-full h-full object-cover object-top" />
-              </div>
-              <div className="p-10 flex flex-col justify-center">
-                <span className="inline-flex bg-[#F5F2E8]/15 text-[#C8DBA8] text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full w-fit mb-4">
-                  {STATIC_OWNER.department}
-                </span>
-                <h2 className="text-3xl font-bold text-[#F5F2E8]">{STATIC_OWNER.name}</h2>
-                <p className="text-[#C8DBA8] font-medium mt-1 text-lg">{STATIC_OWNER.role}</p>
-                <p className="mt-5 text-[#C8DBA8]/80 leading-relaxed text-sm">{STATIC_OWNER.bio}</p>
-                <div className="mt-7 flex gap-3">
-                  <a href="mailto:management@beachhouse.com" className="flex items-center gap-2 border border-[#F5F2E8]/20 text-[#F5F2E8] px-6 py-2.5 rounded-xl font-bold text-sm">
-                    <Mail size={16}/> Contact Owner
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Reveal className="text-center mb-12">
+            <h2 className="text-3xl font-serif text-[#2D5016] italic">Our Dedicated Staff</h2>
+            <p className="text-neutral-500 text-sm mt-2">Delivering genuine hospitality and dynamic service</p>
+          </Reveal>
 
-          {/* DEPARTMENT FILTER */}
-          <div className="flex flex-wrap gap-2 mb-8 justify-center">
-            {DEPARTMENTS.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDept(d)}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
-                  dept === d ? 'bg-[#2D5016] text-[#F5F2E8]' : 'bg-white border border-[#2D5016]/15 text-neutral-600'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-
-          {/* DYNAMIC TEAM GRID (From Database) */}
           <AnimatePresence mode="popLayout">
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredDBMembers.map((member, i) => (
-                <motion.div
-                  key={member.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="bg-white rounded-2xl overflow-hidden border border-[#2D5016]/10 flex flex-col"
-                >
-                  <div className="h-56 overflow-hidden bg-[#EAE6D6]">
-                    <img src={member.image} alt={member.name} className="w-full h-full object-cover object-top" />
-                  </div>
-                  <div className="p-5 flex flex-col flex-1">
-                    <span className="text-[10px] font-bold uppercase text-[#6B9E3F] mb-1">{member.department}</span>
-                    <h3 className="font-bold text-[#2D5016] text-base">{member.name}</h3>
-                    <p className="text-gray-500 text-xs mt-0.5">{member.role}</p>
-                    <p className="text-neutral-500 text-xs mt-3 line-clamp-3 flex-1">{member.bio}</p>
+            {members.length > 0 ? (
+              <motion.div
+                layout
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              >
+                {members.map((member, i) => (
+                  <motion.div
+                    key={member.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: (i % 12) * 0.05, duration: 0.4 }}
+                    className="bg-[#EAE6D6]/40 rounded-2xl overflow-hidden border border-[#2D5016]/10 flex flex-col justify-between group hover:shadow-lg hover:border-[#2D5016]/30 transition-all duration-300"
+                  >
+                    <div>
+                      {/* Image Frame */}
+                      <div className="h-64 overflow-hidden bg-black relative">
+                        <img
+                          src={member.image}
+                          alt={member.name}
+                          className="w-full h-full object-cover object-top opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                        />
+                        
+                      </div>
 
-                    <button
-                        onClick={() => handleToggleFollow(member)}
-                        disabled={processingId === member.id}
-                        className={`mt-5 w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
-                            localFollows.has(member.id)
-                            ? 'bg-gray-100 text-gray-600'
-                            : 'bg-[#2D5016] text-white hover:bg-[#3D6B1F]'
-                        }`}
-                    >
-                        {processingId === member.id ? '...' : (
-                            localFollows.has(member.id) ? <><UserCheck size={14}/> Following</> : <><UserPlus size={14}/> Follow</>
-                        )}
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                      {/* Content details */}
+                      <div className="p-6">
+                        <h3 className="font-serif text-xl font-bold text-[#2D5016]">
+                          {member.name}
+                        </h3>
+                        <p className="text-[#6B9E3F] text-xs font-semibold mt-0.5">
+                          {member.role}
+                        </p>
+
+                      </div>
+                    </div>
+
+                    {/* Action Button Footer */}
+                    <div className="p-6 pt-0">
+
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="py-32 text-center"
+              >
+                <Users size={48} className="mx-auto text-[#2D5016]/20 mb-4" />
+                <h3 className="text-lg font-bold text-[#2D5016]">Our team is currently preparing</h3>
+                <p className="text-neutral-500 mt-1">Please check back soon to meet our staff.</p>
+              </motion.div>
+            )}
           </AnimatePresence>
-
-          {filteredDBMembers.length === 0 && (
-            <div className="text-center py-24 text-neutral-400">
-                <Users size={48} className="mx-auto opacity-20 mb-4" />
-                <p>No team members found in the {dept} category.</p>
-            </div>
-          )}
         </div>
       </main>
     </Layout>

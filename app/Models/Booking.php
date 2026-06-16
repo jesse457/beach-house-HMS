@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-
 #[Fillable([
         'booking_reference', // Generated confirmation code
         'guest_id',
@@ -64,12 +63,18 @@ class Booking extends Model
     protected static function booted()
     {
         static::creating(function ($booking) {
-            // Generate a professional booking reference (e.g., BK-24A7B)
             $booking->booking_reference = 'BK-' . strtoupper(Str::random(6));
         });
 
-        static::saved(function ($booking) {
-            $booking->updateRoomOccupancy();
+        static::saving(function ($booking) {
+            if ($booking->isDirty('status')) {
+                if ($booking->status === BookingStatus::CheckedIn && !$booking->actual_checked_in_at) {
+                    $booking->actual_checked_in_at = now();
+                }
+                if ($booking->status === BookingStatus::CheckedOut && !$booking->actual_checked_out_at) {
+                    $booking->actual_checked_out_at = now();
+                }
+            }
         });
 
         static::deleted(function ($booking) {
@@ -115,25 +120,42 @@ class Booking extends Model
     }
 
     /**
-     * Comprehensive Bill Calculation
+     * Calculate what the bill SHOULD be based on current rates, orders, and amenities.
+     * Pure calculation — does NOT persist. Use this for "standard rate" comparisons.
      */
     public function calculateTotalBill(): float
     {
-        // 1. Calculate Room Total (Daily Rate * Nights)
         $roomDailyTotal = $this->rooms()->sum('price_per_night');
         $roomStayTotal = $this->booking_type === BookingType::WalkIn ? 0 : ($roomDailyTotal * $this->nights);
-
-        // 2. Sum Guest Orders (Food/Drink/Service)
         $ordersTotal = $this->guestOrders()->sum('total_amount');
-
-        // 3. Sum Standalone Amenities (Gym, Pool, Spa)
         $amenitiesTotal = $this->amenityBookings()->sum(DB::raw('price_at_booking * quantity'));
 
-        $grandTotal = ($roomStayTotal + $ordersTotal + $amenitiesTotal) - ($this->discount_amount ?? 0);
+        return round($roomStayTotal + $ordersTotal + $amenitiesTotal - ($this->discount_amount ?? 0), 2);
+    }
 
-        $this->update(['total_price' => $grandTotal]);
+    /**
+     * The actual final bill: negotiated total_price + any guest orders added during the stay.
+     */
+    public function getBalanceDueAttribute(): float
+    {
+        $total = ($this->total_price ?? 0) + $this->guestOrders()->sum('total_amount');
+        return round($total - $this->payments()->sum('amount'), 2);
+    }
 
-        return (float) $grandTotal;
+    /**
+     * Total amount paid across all payments for this booking.
+     */
+    public function getTotalPaidAttribute(): float
+    {
+        return round((float) $this->payments()->sum('amount'), 2);
+    }
+
+    /**
+     * Total of all guest orders placed during this stay.
+     */
+    public function getTotalOrdersAttribute(): float
+    {
+        return round((float) $this->guestOrders()->sum('total_amount'), 2);
     }
 
     /**

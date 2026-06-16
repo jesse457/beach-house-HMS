@@ -3,6 +3,7 @@
 .env
 .env.backup
 .env.production
+.env.test
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -23,3 +24,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+**/caddy
+frankenphp
+frankenphp-worker.php

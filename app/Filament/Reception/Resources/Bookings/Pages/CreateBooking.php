@@ -31,7 +31,6 @@ class CreateBooking extends CreateRecord
                     'type' => PaymentType::BOOKING,
                     'status' => $status,
                     'paid_at' => now(),
-                    'user_id' => auth()->id() ?? 1,
                 ]);
             }
 

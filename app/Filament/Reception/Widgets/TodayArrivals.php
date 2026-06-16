@@ -25,7 +25,7 @@ class TodayArrivals extends BaseWidget
                 Tables\Columns\TextColumn::make('guest.name')->weight('bold'),
                 Tables\Columns\TextColumn::make('rooms.room_number')->badge()->color('info'),
                 Tables\Columns\TextColumn::make('checked_in_at')->time()->label('Arrival Time'),
-                Tables\Columns\TextColumn::make('total_price')->money('usd'),
+                Tables\Columns\TextColumn::make('total_price')->money('XAF'),
             ])
             ->actions([
                Action::make('check_in')

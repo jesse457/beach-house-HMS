@@ -79,7 +79,7 @@ export default function CartSidebar({ onClose }: { onClose: () => void }) {
                                 />
                                 <div className="flex-1 flex flex-col justify-center">
                                     <h4 className="font-bold text-[#2D5016] text-sm leading-tight">{item.name}</h4>
-                                    <p className="text-[#6B9E3F] font-bold text-sm mt-1">${item.price_per_night} <span className="text-gray-400 text-xs font-normal">/ night</span></p>
+                                    <p className="text-[#6B9E3F] font-bold text-sm mt-1">FCFA {item.price_per_night} <span className="text-gray-400 text-xs font-normal">/ night</span></p>
                                     <button
                                         onClick={() => removeFromCart(item.id)}
                                         className="mt-2 text-xs text-red-500 flex items-center gap-1 hover:text-red-700 transition-colors w-max"
@@ -98,7 +98,7 @@ export default function CartSidebar({ onClose }: { onClose: () => void }) {
                         <div className="flex justify-between items-end">
                             <span className="text-gray-500 font-medium">Estimated Total</span>
                             <span className="text-3xl font-black text-[#2D5016]">
-                                ${totalPrice.toFixed(2)}
+                                FCFA {totalPrice.toFixed(2)}
                             </span>
                         </div>
 

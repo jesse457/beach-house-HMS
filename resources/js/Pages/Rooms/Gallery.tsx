@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Head } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Play, ChevronLeft, ChevronRight, Images, Video } from 'lucide-react'
+import { X, Play, ChevronLeft, ChevronRight, Images, Video, Compass } from 'lucide-react'
 
-// Import your persistent Layout
+// Import persistent Layout
 import Layout from '../../Layouts/Layout'
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ interface GalleryItem {
   url: string;
   thumbnail?: string;
   title: string;
-  category: string; // This matches the RoomType name
+  category: string; // Matches the RoomType name
   description?: string;
 }
 
@@ -32,7 +32,7 @@ interface GalleryProps {
 const Reveal = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div
     className={className}
-    initial={{ opacity: 0, y: 20 }}
+    initial={{ opacity: 0, y: 15 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
@@ -47,7 +47,7 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
   const [activeCategory, setActiveCategory] = useState('All')
   const [lightbox, setLightbox] = useState<{ item: GalleryItem; index: number } | null>(null)
 
-  // Combine hardcoded general categories with dynamic RoomTypes
+  // Combine general category headers with dynamic RoomTypes
   const allCategories = ['All', ...dbCategories];
 
   // Media Filtering Logic
@@ -93,31 +93,36 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
 
   return (
     <Layout>
-      <Head title="Gallery | Visual Tour of LuxeStay" />
+      <Head title="Gallery | Visual Tour of Beach House Botaland" />
 
       <main className="min-h-screen bg-[#F5F2E8]">
         {/* ── HERO SECTION ─────────────────────────────────────────────────── */}
         <section className="relative bg-[#2D5016] py-28 overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center opacity-15"
-            style={{ backgroundImage: "url('/images/beach-day.jpg')" }}
+            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80')" }}
           />
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#F5F2E8] to-transparent" />
           <div className="relative mx-auto max-w-4xl px-4 text-center">
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <span className="text-[#6B9E3F] text-sm font-semibold uppercase tracking-widest">Visual Tour</span>
-              <h1 className="mt-3 text-5xl sm:text-6xl font-bold text-[#F5F2E8] leading-tight">Gallery</h1>
+              <span className="text-[#6B9E3F] text-sm font-semibold uppercase tracking-widest block mb-3">
+                Visual Tour
+              </span>
+              <h1 className="text-5xl sm:text-6xl font-bold text-[#F5F2E8] font-serif italic leading-tight">
+                Gallery
+              </h1>
               <p className="mt-5 text-[#C8DBA8] text-lg max-w-xl mx-auto">
-                Explore our stunning rooms, lush grounds, and premium amenities.
+                Explore our stunning seaside suites, coastal grounds, and curated amenities.
               </p>
             </motion.div>
           </div>
         </section>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
+
           {/* ── TAB SWITCHER (All / Photos / Videos) ───────────────────────── */}
-          <Reveal className="pt-10 pb-2">
-            <div className="flex items-center gap-2 bg-white rounded-2xl p-1.5 border border-[#2D5016]/10 w-fit shadow-sm">
+          <Reveal className="pt-10 pb-4">
+            <div className="flex flex-wrap items-center gap-2 bg-white/80 backdrop-blur-md rounded-2xl p-1.5 border border-[#2D5016]/10 w-fit shadow-xs">
               {[
                 { key: 'all', label: 'All Media', count: items.length, icon: null },
                 { key: 'photos', label: 'Photos', count: photos.length, icon: Images },
@@ -126,14 +131,14 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
                 <button
                   key={t.key}
                   onClick={() => { setTab(t.key as any); setActiveCategory('All') }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                    tab === t.key ? 'bg-[#2D5016] text-[#F5F2E8]' : 'text-neutral-500 hover:text-[#2D5016]'
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                    tab === t.key ? 'bg-[#2D5016] text-[#F5F2E8] shadow-xs' : 'text-neutral-500 hover:text-[#2D5016]'
                   }`}
                 >
                   {t.icon && <t.icon className="h-4 w-4" />}
                   {t.label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ml-1 ${
-                    tab === t.key ? 'bg-[#F5F2E8]/20 text-[#C8DBA8]' : 'bg-[#2D5016]/10 text-[#2D5016]'
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1 ${
+                    tab === t.key ? 'bg-white/20 text-[#C8DBA8]' : 'bg-[#2D5016]/10 text-[#2D5016]'
                   }`}>
                     {t.count}
                   </span>
@@ -143,16 +148,16 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
           </Reveal>
 
           {/* ── CATEGORY FILTER ──────────────────────────────────────────── */}
-          <Reveal className="py-5">
+          <Reveal className="py-4">
             <div className="flex flex-wrap gap-2">
               {allCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-200 border ${
                     activeCategory === cat
-                      ? 'bg-[#2D5016] text-[#F5F2E8] shadow-md'
-                      : 'bg-white border border-[#2D5016]/15 text-neutral-600 hover:border-[#2D5016] hover:text-[#2D5016]'
+                      ? 'bg-[#2D5016] text-[#F5F2E8] border-[#2D5016] shadow-xs'
+                      : 'bg-white border-[#2D5016]/10 text-neutral-600 hover:border-[#2D5016] hover:text-[#2D5016]'
                   }`}
                 >
                   {cat}
@@ -170,7 +175,7 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                 >
                     {filtered.map((item, i) => (
                     item.type === 'video' ? (
@@ -181,8 +186,9 @@ export default function Gallery({ items = [], rooms = [], dbCategories = [] }: G
                     ))}
                 </motion.div>
               ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 text-center">
-                    <p className="text-neutral-400">No media found in this category.</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-28 text-center">
+                    <Compass size={48} className="mx-auto text-[#2D5016]/20 mb-4 animate-spin-slow" />
+                    <p className="text-neutral-500 font-serif italic text-lg">No media found in this category.</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -214,19 +220,19 @@ function GalleryCard({ item, index, onClick }: { item: GalleryItem; index: numbe
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: (index % 12) * 0.05 }}
-      whileHover={{ y: -5 }}
+      transition={{ delay: (index % 12) * 0.05, duration: 0.4 }}
+      whileHover={{ y: -4 }}
       onClick={onClick}
-      className="group relative rounded-2xl overflow-hidden cursor-pointer bg-[#EAE6D6] h-64 border border-[#2D5016]/10 shadow-sm"
+      className="group relative rounded-2xl overflow-hidden cursor-pointer bg-[#EAE6D6]/40 h-72 border border-[#2D5016]/10 shadow-xs hover:shadow-md transition-all duration-300"
     >
       <img
         src={item.url}
         alt={item.title}
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+        className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out bg-[#EAE6D6]"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-5 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6 flex flex-col justify-end">
         <p className="text-white font-bold text-base leading-tight">{item.title}</p>
-        <p className="text-[#6B9E3F] text-xs font-semibold uppercase tracking-wider mt-1">{item.category}</p>
+        <p className="text-[#6B9E3F] text-[10px] font-bold uppercase tracking-widest mt-2">{item.category}</p>
       </div>
     </motion.div>
   )
@@ -237,23 +243,24 @@ function VideoCard({ item, index, onClick }: { item: GalleryItem; index: number;
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: (index % 12) * 0.05 }}
-      whileHover={{ y: -5 }}
+      transition={{ delay: (index % 12) * 0.05, duration: 0.4 }}
+      whileHover={{ y: -4 }}
       onClick={onClick}
-      className="group relative rounded-2xl overflow-hidden cursor-pointer bg-black h-64 border border-[#2D5016]/10 shadow-sm"
+      className="group relative rounded-2xl overflow-hidden cursor-pointer bg-black h-72 border border-[#2D5016]/10 shadow-xs hover:shadow-md transition-all duration-300"
     >
       <img
         src={item.thumbnail || item.url}
-        className="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-110 transition-all duration-700"
+        className="w-full h-full object-cover opacity-50 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 bg-black"
+        alt={item.title}
       />
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-16 w-16 rounded-full bg-[#2D5016] flex items-center justify-center text-white shadow-2xl group-hover:scale-110 transition-transform duration-300">
-          <Play fill="currentColor" size={28} className="ml-1" />
+        <div className="h-14 w-14 rounded-full bg-[#2D5016]/90 hover:bg-[#2D5016] flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300 backdrop-blur-xs">
+          <Play fill="currentColor" size={24} className="ml-1 text-[#F5F2E8]" />
         </div>
       </div>
-      <div className="absolute bottom-5 left-5">
+      <div className="absolute bottom-6 left-6">
         <p className="text-white font-bold text-base">{item.title}</p>
-        <span className="text-[10px] tracking-[0.2em] uppercase font-black text-[#6B9E3F]">Video Tour</span>
+        <span className="text-[9px] tracking-[0.15em] uppercase font-black text-[#6B9E3F] mt-1.5 block">Video Tour</span>
       </div>
     </motion.div>
   )
@@ -298,25 +305,27 @@ function Lightbox({ item, index, total, onClose, onNext, onPrev }: any) {
       <div className="relative max-w-6xl w-full h-full flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
         <motion.div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="w-full h-full flex flex-col items-center justify-center"
         >
             {item.type === 'video' ? (
-            <video src={item.url} controls autoPlay className="max-h-[70vh] w-auto rounded-lg shadow-2xl" />
+              <video src={item.url} controls autoPlay playsInline className="max-h-[70vh] max-w-full rounded-lg shadow-2xl outline-none" />
             ) : (
-            <img src={item.url} className="max-h-[70vh] w-auto rounded-lg shadow-2xl object-contain" />
+              <img src={item.url} className="max-h-[70vh] max-w-full rounded-lg shadow-2xl object-contain" alt={item.title} />
             )}
 
-            <div className="mt-8 text-center max-w-2xl">
-                <h3 className="text-3xl font-bold text-white tracking-tight">{item.title}</h3>
-                <p className="text-white/50 mt-3 text-lg leading-relaxed">{item.description}</p>
+            <div className="mt-8 text-center max-w-2xl px-4">
+                <h3 className="text-2xl font-serif text-white tracking-wide">{item.title}</h3>
+                {item.description && (
+                  <p className="text-white/60 mt-2 text-sm leading-relaxed">{item.description}</p>
+                )}
                 <div className="mt-6 inline-flex items-center gap-3">
-                    <span className="h-px w-8 bg-[#6B9E3F]"></span>
-                    <span className="text-xs font-black text-[#6B9E3F] uppercase tracking-[0.3em]">
+                    <span className="h-px w-6 bg-[#6B9E3F]"></span>
+                    <span className="text-[10px] font-black text-[#6B9E3F] uppercase tracking-[0.25em]">
                         {index + 1} / {total}
                     </span>
-                    <span className="h-px w-8 bg-[#6B9E3F]"></span>
+                    <span className="h-px w-6 bg-[#6B9E3F]"></span>
                 </div>
             </div>
         </motion.div>

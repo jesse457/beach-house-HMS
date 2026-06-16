@@ -2,6 +2,8 @@
 
 namespace App\Filament\Reception\Resources\Payments\Schemas;
 
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -15,9 +17,9 @@ class PaymentForm
     {
         return $schema
             ->components([
-              Section::make('Payment Details')
+                Section::make('Payment Details')
                     ->schema([
-                       Select::make('booking_id')
+                        Select::make('booking_id')
                             ->relationship('booking', 'id')
                             ->getOptionLabelFromRecordUsing(fn ($record) =>
                                 "Booking #{$record->id} - Guest: {$record->guest->name} (Room: " . ($record->rooms->first()->room_number ?? 'N/A') . ")"
@@ -26,22 +28,24 @@ class PaymentForm
                             ->preload()
                             ->required()
                             ->live()
-                            // When booking is selected, we could auto-fill the amount with balance due
                             ->afterStateUpdated(function ($state, Set $set) {
                                 if ($state) {
                                     $booking = \App\Models\Booking::find($state);
-                                    $paid = $booking->payments()->sum('amount');
-                                    $set('amount', $booking->total_price - $paid);
+                                    $set('amount', $booking->balance_due);
                                 }
                             }),
 
                         TextInput::make('amount')
                             ->required()
                             ->numeric()
-                            ->prefix('$')
-                            ->maxValue(1000000),
+                            ->prefix('XAF'),
 
-                       Select::make('payment_method')
+                        Select::make('type')
+                            ->options(PaymentType::class)
+                            ->default(PaymentType::BOOKING)
+                            ->required(),
+
+                        Select::make('payment_method')
                             ->options([
                                 'cash' => 'Cash',
                                 'credit_card' => 'Credit Card',
@@ -52,12 +56,8 @@ class PaymentForm
                             ->native(false),
 
                         Select::make('status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'completed' => 'Completed',
-                                'failed' => 'Failed',
-                            ])
-                            ->default('completed')
+                            ->options(PaymentStatus::class)
+                            ->default(PaymentStatus::Completed)
                             ->required(),
 
                         DateTimePicker::make('paid_at')

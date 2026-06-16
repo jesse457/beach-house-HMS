@@ -57,9 +57,7 @@ export default function Navbar() {
                                 </>
                             ) : (
                                 <>
-                                    <Link href="/login">
-                                        <Button variant="ghost" size="sm">Sign In</Button>
-                                    </Link>
+                                  
                                     <Link href="/rooms">
                                         <Button size="sm">Book Now</Button>
                                     </Link>

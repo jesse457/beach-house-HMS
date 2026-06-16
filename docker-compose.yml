@@ -1,0 +1,111 @@
+version: "3.8"
+
+networks:
+  botaland_net:
+    driver: bridge
+
+services:
+  # --- Laravel Application (FrankenPHP behind Nginx) ---
+  app:
+    image: ghcr.io/jesse457/botaland-resort:latest
+    container_name: botaland_app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000" # Accessible ONLY to the host's Nginx reverse proxy
+    env_file:
+      - .env    # Forces FrankenPHP/Caddy to serve plain HTTP on port 80 inside container
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - botaland_net
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+
+  # --- Optimized Database (MariaDB) ---
+  db:
+    image: mariadb:10.11
+    container_name: botaland_db
+    restart: unless-stopped
+    networks:
+      - botaland_net
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    command:
+      - "mysqld"
+      - "--innodb-buffer-pool-size=256M"
+      - "--innodb-log-file-size=64M"
+      - "--max-connections=100"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+
+  # --- Object Storage (MinIO Server) ---
+  minio:
+    image: minio/minio
+    container_name: botaland_minio
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"  # S3 API proxied safely via Nginx
+      - "127.0.0.1:9001:9001"  # Console UI proxied safely via Nginx
+    networks:
+      - botaland_net
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # --- Automatic Bucket Creation & Public Policy ---
+  minio-setup:
+    image: minio/mc
+    container_name: botaland_minio_setup
+    restart: "no"
+    networks:
+      - botaland_net
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set myminio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD) do echo 'Waiting for MinIO...' && sleep 1; done;
+      /usr/bin/mc mb myminio/${AWS_BUCKET:-hotel-management} || true;
+      /usr/bin/mc anonymous set public myminio/${AWS_BUCKET:-hotel-management};
+      exit 0;
+      "
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+volumes:
+  db_data:
+  minio_data:
