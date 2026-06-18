@@ -169,10 +169,10 @@ jobs:
             docker compose pull
 
             # # 4. Recreate and start the containers in the background
-            # docker compose up -d
+            docker compose up -d
 
             # # 5. Clean up old, unused Docker images to save VPS disk space
-            # docker image prune -f
+            docker image prune -f
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY: ${{ env.REGISTRY }}

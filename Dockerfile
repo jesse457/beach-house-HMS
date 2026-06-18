@@ -51,11 +51,13 @@ COPY --from=frontend /app/public/build ./public/build
 COPY docker/supervisord.conf /etc/supervisord.conf
 
 # Create writable directories for supervisor and runtime files
+# ADDED /app/public to the chown list so Octane can write frankenphp-worker.php
 RUN mkdir -p /var/log/supervisor /run /app/storage/logs && \
     chown -R www-data:www-data \
     /app/storage \
     /app/bootstrap/cache \
     /app/vendor \
+    /app/public \
     /var/log/supervisor \
     /run \
     /tmp
