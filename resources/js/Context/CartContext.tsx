@@ -15,6 +15,9 @@ interface CartContextType {
     isHydrated: boolean;
     totalPrice: number;
     totalItems: number;
+    toastMessage: string | null;
+    toastVisible: boolean;
+    dismissToast: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -22,6 +25,18 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const [items, setItems] = useState<RoomItem[]>([]);
     const [isHydrated, setIsHydrated] = useState(false);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [toastVisible, setToastVisible] = useState(false);
+
+    const showToast = (message: string) => {
+        setToastMessage(message);
+        setToastVisible(true);
+    };
+
+    const dismissToast = () => {
+        setToastVisible(false);
+        setTimeout(() => setToastMessage(null), 300);
+    };
 
     // Hydrate from localStorage on mount
     useEffect(() => {
@@ -46,6 +61,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const addToCart = (room: RoomItem) => {
         setItems(prev => {
             if (prev.find(i => i.id === room.id)) return prev;
+            showToast(`${room.name} added to your cart`);
             return [...prev, room];
         });
     };
@@ -71,8 +87,11 @@ const value = React.useMemo(() => ({
         removeFromCart,
         clearCart,
         totalPrice,
-        totalItems
-    }), [items, isHydrated]);
+        totalItems,
+        toastMessage,
+        toastVisible,
+        dismissToast,
+    }), [items, isHydrated, toastMessage, toastVisible]);
     return (
         <CartContext.Provider value={value}>
             {children}
@@ -91,7 +110,10 @@ export const useCart = () => {
         totalPrice: 0,
         addToCart: () => {},
         removeFromCart: () => {},
-        clearCart: () => {}
+        clearCart: () => {},
+        toastMessage: null,
+        toastVisible: false,
+        dismissToast: () => {},
     };
   }
   return context;

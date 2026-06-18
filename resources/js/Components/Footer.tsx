@@ -8,9 +8,8 @@ export default function Footer() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
                     <div className="col-span-1 md:col-span-2">
-                        <div className="flex items-center gap-2.5 mb-4">
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5F2E8] text-[#2D5016] text-sm font-black">BHB</span>
-                            <span className="text-[#F5F2E8] font-bold text-xl">Beach House Botaland</span>
+                        <div className="mb-4">
+                            <img src="/images/logo.webp" alt="Beach House Bota Land" className="h-15 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
                         </div>
                         <p className="text-sm leading-relaxed max-w-sm text-[#C8DBA8]">
                             Experience comfort and luxury in the heart of the city. Premium rooms, world-class amenities, and personalized service.

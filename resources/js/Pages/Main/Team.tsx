@@ -46,8 +46,8 @@ export default function Team({ members = [] }: TeamProps) {
         {/* ── HERO SECTION ───────────────────────────────────────────── */}
         <section className="relative bg-[#2D5016] py-28 overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-15"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=80')" }}
+            className="absolute inset-0 bg-cover bg-center opacity-20"
+            style={{ backgroundImage: "url('/images/team_image.jpeg')" }}
           />
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#F5F2E8] to-transparent" />
           <div className="relative mx-auto max-w-4xl px-4 text-center">

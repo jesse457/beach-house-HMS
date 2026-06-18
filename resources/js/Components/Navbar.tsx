@@ -17,9 +17,8 @@ export default function Navbar() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     {/* LOGO */}
-                    <Link href="/" className="flex items-center gap-2.5 font-bold text-xl text-[#2D5016]">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2D5016] text-[#F5F2E8] text-sm font-black">BHB</span>
-                        <span className="hidden sm:inline">Beach-House-Botaland</span>
+                    <Link href="/" className="flex items-center gap-2.5">
+                        <img src="/images/logo.webp" alt="Beach House Bota Land" className="h-15 w-auto" />
                     </Link>
 
                     {/* DESKTOP NAV */}
@@ -57,7 +56,7 @@ export default function Navbar() {
                                 </>
                             ) : (
                                 <>
-                                  
+
                                     <Link href="/rooms">
                                         <Button size="sm">Book Now</Button>
                                     </Link>

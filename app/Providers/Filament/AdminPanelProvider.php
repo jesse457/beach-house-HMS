@@ -27,8 +27,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('Beach House Bota Land ')
-            ->brandLogoHeight('2rem') // Controls logo sizing
-            ->favicon(asset('favicon.ico'))
+            ->brandLogo(asset('images/logo.webp'))
+            ->brandLogoHeight('3.75rem') // Controls logo sizing — matches Navbar
+            ->favicon(asset('favicon-48.png'))
             ->font('Inter') // Professional clean font
 
             // --- 2. Sidebar Customization (Reduced Size) ---

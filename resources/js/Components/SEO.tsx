@@ -50,6 +50,9 @@ export default function SEO({
       : [jsonLd]
     : [];
 
+  // Default to site logo when no ogImage is provided
+  const resolvedOgImage = ogImage || '/images/logo.webp';
+
   return (
     <Head title={title}>
       {description && (
@@ -60,8 +63,8 @@ export default function SEO({
       )}
       {title && <meta property="og:title" content={`${title} - Beach House Botaland`} />}
       {canonical && <link rel="canonical" href={canonical} />}
-      {ogImage && <meta property="og:image" content={ogImage} />}
-      {ogImage && <meta name="twitter:image" content={ogImage} />}
+      <meta property="og:image" content={resolvedOgImage} />
+      <meta name="twitter:image" content={resolvedOgImage} />
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
       {jsonLdArray.map((entry, i) => (
         <script

@@ -180,13 +180,13 @@ export default function RoomShow({ room }: RoomProps) {
                 </div>
 
                 {/* ── RESPONSIVE GALLERY SECTION ── */}
-                <div className="bg-[#2D5016] pb-12">
+                <div className="bg-[#2D5016] pb-8 md:pb-12">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-auto md:h-[500px]">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 h-auto md:h-[500px]">
 
                             {/* Main Display Frame */}
                             <div
-                                className="md:col-span-3 relative rounded-2xl md:rounded-3xl overflow-hidden bg-black cursor-pointer group flex items-center justify-center aspect-video md:aspect-auto h-[260px] sm:h-[400px] md:h-full shadow-lg"
+                                className="md:col-span-3 relative rounded-2xl md:rounded-3xl overflow-hidden bg-black cursor-pointer group shadow-lg aspect-[4/3] sm:aspect-video md:aspect-auto md:h-full"
                                 onClick={() => setLightbox(true)}
                             >
                                 <AnimatePresence mode="wait">
@@ -198,9 +198,9 @@ export default function RoomShow({ room }: RoomProps) {
                                         className="absolute inset-0 w-full h-full flex items-center justify-center"
                                     >
                                         {current.type === 'video' ? (
-                                            <video src={current.src} poster={current.thumb} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                                            <video src={current.src} poster={current.thumb} autoPlay muted loop playsInline className="w-full h-full object-cover md:object-cover" />
                                         ) : (
-                                            <img src={current.src} className="w-full h-full object-cover" alt={`${title} - Room ${room.room_number}`} />
+                                            <img src={current.src} className="w-full h-full object-contain sm:object-cover md:object-cover" alt={`${title} - Room ${room.room_number}`} />
                                         )}
                                     </motion.div>
                                 </AnimatePresence>
@@ -210,30 +210,30 @@ export default function RoomShow({ room }: RoomProps) {
                                     <>
                                         <button
                                             onClick={prev}
-                                            className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 md:p-3 rounded-full bg-black/50 hover:bg-black/75 text-[#F5F2E8] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+                                            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 p-2 sm:p-2.5 md:p-3 rounded-full bg-black/50 hover:bg-black/75 text-[#F5F2E8] md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                                         >
-                                            <ChevronLeft size={20} />
+                                            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                                         </button>
                                         <button
                                             onClick={next}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 md:p-3 rounded-full bg-black/50 hover:bg-black/75 text-[#F5F2E8] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+                                            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 p-2 sm:p-2.5 md:p-3 rounded-full bg-black/50 hover:bg-black/75 text-[#F5F2E8] md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                                         >
-                                            <ChevronRight size={20} />
+                                            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                                         </button>
-                                        <div className="absolute bottom-4 left-4 px-3.5 py-1.5 bg-black/60 backdrop-blur-md rounded-full text-[#F5F2E8] text-xs font-bold tracking-wider">
+                                        <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-black/60 backdrop-blur-md rounded-full text-[#F5F2E8] text-[10px] sm:text-xs font-bold tracking-wider">
                                             {active + 1} / {allMedia.length}
                                         </div>
                                     </>
                                 )}
                             </div>
 
-                            {/* Thumbnails list (Horizontal scroll on mobile, Vertical stack on desktop) */}
-                            <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 pr-0 md:pr-2 scrollbar-none md:custom-scrollbar scroll-smooth">
+                            {/* Thumbnails list (Horizontal carousel on mobile, Vertical stack on desktop) */}
+                            <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-1 md:pb-0 pr-0 md:pr-2 snap-x snap-mandatory scrollbar-none scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
                                 {allMedia.map((media, i) => (
                                     <button
                                         key={i}
                                         onClick={() => setActive(i)}
-                                        className={`relative rounded-xl overflow-hidden h-16 w-24 md:w-full md:h-28 shrink-0 border-2 transition-all duration-300 bg-black/20 ${
+                                        className={`relative rounded-lg sm:rounded-xl overflow-hidden h-14 w-20 sm:h-16 sm:w-24 md:w-full md:h-28 shrink-0 snap-start border-2 transition-all duration-300 bg-black/20 ${
                                             active === i
                                                 ? 'border-[#6B9E3F] scale-95 shadow-md'
                                                 : 'border-transparent opacity-60 hover:opacity-100'
@@ -241,8 +241,8 @@ export default function RoomShow({ room }: RoomProps) {
                                     >
                                         <img src={media.thumb} className="w-full h-full object-cover" alt={`${title} Room ${room.room_number} view ${i + 1}`} />
                                         {media.type === 'video' && (
-                                            <span className="absolute inset-0 m-auto h-8 w-8 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-xs">
-                                                <Play className="fill-white translate-x-0.5" size={14} />
+                                            <span className="absolute inset-0 m-auto h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-xs">
+                                                <Play className="fill-white translate-x-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                             </span>
                                         )}
                                     </button>
