@@ -12,7 +12,7 @@ class AmenityFactory extends Factory
         $amenities = [
             'Free High-Speed WiFi' => 'heroicon-o-wifi',
             'Smart TV / Netflix' => 'heroicon-o-tv',
-            'Air Conditioning' => 'heroicon-o-snowflake',
+            'Air Conditioning' => 'heroicon-o-window',
             'Mini Bar' => 'heroicon-o-beaker',
             'Room Safe' => 'heroicon-o-key',
             'Swimming Pool' => 'heroicon-o-swatch',
