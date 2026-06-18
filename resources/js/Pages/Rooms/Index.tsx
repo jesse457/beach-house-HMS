@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { Link } from '@inertiajs/react'
+import { Link, router } from '@inertiajs/react'
 import SEO from '../../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -82,6 +82,7 @@ export default function Rooms({
     const [maxPrice, setMaxPrice] = useState(500000); // Default 500k XAF
     const [selectedAmenities, setSelectedAmenities] = useState<number[]>([]);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
 
     // Dynamic Category List
     const allCategories = useMemo(() => ['All', ...roomTypes.map(t => t.name)], [roomTypes]);
@@ -105,9 +106,15 @@ export default function Rooms({
     };
 
     const resetFilters = () => {
+        setIsResetting(true);
         setActiveCategory('All');
         setMaxPrice(1000000);
         setSelectedAmenities([]);
+        // Reload page 1 with no filters to get fresh server data
+        router.get('/rooms', {}, {
+            preserveState: false,
+            onFinish: () => setIsResetting(false),
+        });
     };
 
     const getUrl = (path: string) => {
@@ -242,7 +249,16 @@ export default function Rooms({
                         </div>
 
                         {/* ── ROOM GRID ──────────────────────────────────────── */}
-                        <div className="flex-1">
+                        <div className="flex-1 relative">
+                            {/* Loading overlay when resetting filters */}
+                            {isResetting && (
+                                <div className="absolute inset-0 z-20 bg-[#F5F2E8]/70 backdrop-blur-sm flex items-start justify-center pt-40">
+                                    <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-lg border border-[#2D5016]/10">
+                                        <div className="w-5 h-5 border-2 border-[#2D5016] border-t-transparent rounded-full animate-spin" />
+                                        <span className="text-sm font-semibold text-[#2D5016]">Refreshing rooms...</span>
+                                    </div>
+                                </div>
+                            )}
                             <div className="mb-8 hidden lg:flex items-center justify-between border-b border-[#2D5016]/10 pb-4">
                                 <h2 className="text-2xl font-serif text-[#2D5016]">
                                     Discovering <span className="italic">{activeCategory}</span>

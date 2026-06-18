@@ -13,6 +13,7 @@ export default function CartIcon() {
         <>
             <button
                 onClick={() => setIsOpen(true)}
+                aria-label="Open cart"
                 className="relative p-2 text-[#2D5016] hover:bg-[#2D5016]/5 rounded-full transition-colors"
             >
                 <ShoppingBag size={24} />

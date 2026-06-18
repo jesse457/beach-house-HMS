@@ -9,6 +9,7 @@ export default function MobileMenu({ user, isAdmin }: { user: any | null; isAdmi
         <div className="md:hidden">
             <button
                 onClick={() => setOpen(!open)}
+                aria-label={open ? 'Close menu' : 'Open menu'}
                 className="p-2 rounded-lg hover:bg-[#2D5016]/10 text-[#2D5016]"
             >
                 {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

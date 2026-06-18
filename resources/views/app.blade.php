@@ -4,6 +4,9 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        {{-- Preload LCP hero image for faster Largest Contentful Paint --}}
+        <link rel="preload" as="image" href="{{ asset('images/beach-day2.webp') }}" fetchpriority="high">
+
         {{-- Favicon (multiple sizes for browser tabs, bookmarks, and home screen) --}}
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16.png') }}" />
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}" />

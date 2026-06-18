@@ -156,19 +156,7 @@ export default function Location() {
                 </div>
               </Reveal>
 
-              <Reveal delay={0.25}>
-                <div className="bg-white rounded-2xl p-8 border border-[#2D5016]/10 shadow-xs">
-                  <h3 className="font-serif text-lg text-[#2D5016] mb-4">Reception Hours</h3>
-                  <div className="space-y-3">
-                    {hours.map(h => (
-                      <div key={h.day} className="flex justify-between items-center text-xs py-2 border-b border-[#2D5016]/5 last:border-0 last:pb-0">
-                        <span className="text-neutral-500 font-medium">{h.day}</span>
-                        <span className="font-bold text-[#2D5016]">{h.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Reveal>
+        
             </div>
 
           </div>

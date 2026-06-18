@@ -9,7 +9,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
                     <div className="col-span-1 md:col-span-2">
                         <div className="mb-4">
-                            <img src="/images/logo.webp" alt="Beach House Bota Land" className="h-15 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+                            <img src="/images/logo-sm.webp" alt="Beach House Bota Land" width="150" height="150" className="h-15 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
                         </div>
                         <p className="text-sm leading-relaxed max-w-sm text-[#C8DBA8]">
                             Experience comfort and luxury in the heart of the city. Premium rooms, world-class amenities, and personalized service.

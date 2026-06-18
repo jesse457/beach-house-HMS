@@ -207,7 +207,7 @@ export default function Home({
                     <motion.div
                         style={{
                             y: heroY,
-                            backgroundImage: "url('images/beach-day2.jpg')",
+                            backgroundImage: "url('images/beach-day2.webp')",
                         }}
                         className="absolute inset-0 bg-cover bg-center"
                     />
@@ -371,7 +371,7 @@ export default function Home({
                                 <div className="relative">
                                     <div className="aspect-[4/5] rounded-3xl overflow-hidden shadow-xl">
                                         <img
-                                            src="images/beach.jpeg"
+                                            src="images/beach.webp"
                                             alt="Beach House interior"
                                             className="w-full h-full object-cover"
                                         />
