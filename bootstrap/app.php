@@ -13,9 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-         $middleware->web(append: [
-        HandleInertiaRequests::class,
-    ]);
+        $middleware->web(append: [
+            HandleInertiaRequests::class,
+        ]);
+
+        // Trust all proxies — needed when behind Nginx/Caddy so Laravel
+        // respects the X-Forwarded-Proto header and generates HTTPS URLs.
+        $middleware->trustProxies('*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
