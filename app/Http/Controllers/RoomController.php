@@ -58,8 +58,26 @@ class RoomController extends Controller
      * Renders the Rooms/Show.tsx page
      * ✅ Redirects if room is occupied and user tries to view directly
      */
-    public function show(Room $room)
+    /**
+     * Show a single room. Resolves by slug first, falls back to numeric ID
+     * for backward compatibility. Issues a 301 redirect for old numeric URLs.
+     */
+    public function show(string $roomIdentifier)
     {
+        // Try slug first, then numeric ID for backward compatibility
+        $room = Room::where('slug', $roomIdentifier)
+            ->orWhere(function ($q) use ($roomIdentifier) {
+                if (is_numeric($roomIdentifier)) {
+                    $q->where('id', (int) $roomIdentifier);
+                }
+            })
+            ->firstOrFail();
+
+        // Redirect old numeric URLs to new SEO-friendly slug URLs
+        if (is_numeric($roomIdentifier) && $room->slug) {
+            return redirect()->route('rooms.show', $room->slug, 301);
+        }
+
         // ✅ Prevent viewing occupied rooms directly via URL
         if ($room->is_occupied && $room->status === 'available') {
             return redirect()->route('rooms.index')
@@ -87,6 +105,7 @@ class RoomController extends Controller
         return Inertia::render('Rooms/Show', [
             'room' => [
                 'id' => $room->id,
+                'slug' => $room->slug,
                 'room_number' => $room->room_number,
                 'type_name' => $room->roomType?->name,
                 'description' => $room->roomType?->description,

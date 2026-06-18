@@ -108,7 +108,7 @@ test('room show returns 200 for available room', function () {
     $roomType = RoomType::factory()->create();
     $room = Room::factory()->for($roomType)->create(['is_occupied' => false]);
 
-    $response = $this->get("/rooms/{$room->id}");
+    $response = $this->get("/rooms/{$room->slug}");
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page->component('Rooms/Show'));
@@ -121,7 +121,7 @@ test('room show redirects for occupied room', function () {
         'status' => 'available',
     ]);
 
-    $response = $this->get("/rooms/{$room->id}");
+    $response = $this->get("/rooms/{$room->slug}");
 
     $response->assertRedirect(route('rooms.index'));
 });

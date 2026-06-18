@@ -1,5 +1,6 @@
 import React from 'react'
-import { Head, Link } from '@inertiajs/react'
+import { Link } from '@inertiajs/react'
+import SEO from '../../Components/SEO'
 import { motion } from 'framer-motion'
 import {
   MapPin, Phone, Mail, Clock, Car, Plane, ArrowRight, Navigation, Compass
@@ -41,7 +42,39 @@ const hours = [
 export default function Location() {
   return (
     <Layout>
-      <Head title="Location & Directions | Beach House Botaland" />
+      <SEO
+        title="Location & Directions | Beach House Botaland"
+        description="Find Beach House Botaland in Limbe, Cameroon. Get directions to our beachfront resort on the coast of Botaland with spectacular ocean views."
+        canonical={window.location.origin + '/location'}
+        jsonLd={[{
+          '@context': 'https://schema.org',
+          '@type': 'LocalBusiness',
+          name: 'Beach House Botaland',
+          description: 'Mediterranean-style beach resort in Limbe, Cameroon.',
+          url: window.location.origin + '/location',
+          telephone: '+237 679447430',
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: 'Bota Guest House Real Location, 255G+R9H',
+            addressLocality: 'Limbe',
+            addressCountry: 'CM',
+          },
+          geo: {
+            '@type': 'GeoCoordinates',
+            latitude: 4.0095581,
+            longitude: 9.1761052,
+          },
+          openingHoursSpecification: [
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Monday', opens: '00:00', closes: '23:59' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Tuesday', opens: '00:00', closes: '23:59' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Wednesday', opens: '00:00', closes: '23:59' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Thursday', opens: '00:00', closes: '23:59' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Friday', opens: '00:00', closes: '23:59' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', opens: '00:00', closes: '23:59' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', opens: '00:00', closes: '23:59' },
+          ],
+        }]}
+      />
 
       <main className="min-h-screen bg-[#F5F2E8]">
         {/* ── HERO SECTION ── */}

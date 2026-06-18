@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { Link, Head } from '@inertiajs/react'
+import { Link } from '@inertiajs/react'
+import SEO from '../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowRight, ShoppingBag, Star, X, Check, Wifi, Tv, Wind,
@@ -25,6 +26,7 @@ interface RoomType {
 
 interface Room {
     id: number;
+    slug?: string;
     room_number: string;
     room_type_id: number;
     price_per_night: string;
@@ -115,7 +117,11 @@ export default function Rooms({
 
     return (
         <Layout>
-            <Head title="Luxury Lodges & Suites | Cameroon" />
+            <SEO
+                title="Luxury Lodges & Suites | Cameroon"
+                description="Browse our curated selection of luxury suites and lodges at Beach House Botaland. Find your perfect stay with ocean views and premium amenities in Limbe, Cameroon."
+                canonical={window.location.origin + '/rooms'}
+            />
 
             <main className="min-h-screen bg-[#F5F2E8]">
                 {/* ── HERO SECTION ───────────────────────────────────────────── */}
@@ -409,7 +415,7 @@ function RoomCard({ room, index, getUrl }: { room: Room, index: number, getUrl: 
             <div className="p-6 pt-0 mt-auto">
                 <div className="flex gap-2.5 h-12">
                     <Link
-                        href={isOccupied ? '#' : `/rooms/${room.id}`}
+                        href={isOccupied ? '#' : `/rooms/${room.slug || room.id}`}
                         onClick={(e) => isOccupied && e.preventDefault()}
                         className={`flex-1 rounded-xl flex items-center justify-center text-xs font-bold uppercase tracking-widest transition-all duration-200
                             ${isOccupied

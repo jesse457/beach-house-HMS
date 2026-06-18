@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Head, router } from '@inertiajs/react'
+import { router } from '@inertiajs/react'
+import SEO from '../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Play, ChevronLeft, ChevronRight, Images, Video, Compass } from 'lucide-react'
 
@@ -125,7 +126,11 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
 
   return (
     <Layout>
-      <Head title="Gallery | Visual Tour of Beach House Botaland" />
+      <SEO
+        title="Gallery | Visual Tour of Beach House Botaland"
+        description="Explore our stunning seaside suites, coastal grounds, and curated amenities at Beach House Botaland in Limbe, Cameroon."
+        canonical={window.location.origin + '/gallery'}
+      />
 
       <main className="min-h-screen bg-[#F5F2E8]">
         {/* ── HERO SECTION ─────────────────────────────────────────────────── */}

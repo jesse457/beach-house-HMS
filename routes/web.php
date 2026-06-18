@@ -26,7 +26,7 @@ Route::get('/',[MainController::class, 'index'])->name('home');
  */
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
 
-Route::get('/gallery', [MainController::class, 'gallery']);
+Route::get('/gallery', [MainController::class, 'gallery'])->name('gallery');
 
 
 
@@ -45,11 +45,11 @@ Route::get('/team', function (Request $request) {
             ? auth()->user()->following()->pluck('team_member_id')
             : [],
     ]);
-});
+})->name('team');
 
 Route::get('/location', function (Request $request) {
     return Inertia::render('Main/Location');
-});
+})->name('location');
 
 /**
  * ROOM DETAILS
@@ -75,3 +75,12 @@ Route::get('/bookings/{booking}/receipt', function (Booking $booking) {
 
     return view('receipts.booking', compact('booking'));
 })->name('bookings.receipt');
+
+/**
+ * SEO: Dynamic sitemap listing all public pages
+ */
+Route::get('/sitemap.xml', function () {
+    $rooms = \App\Models\Room::with('roomType')->get();
+    return response()->view('sitemap', ['rooms' => $rooms])
+        ->header('Content-Type', 'application/xml');
+});

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Link, Head } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
+import SEO from "../Components/SEO";
 import {
     motion,
     useScroll,
@@ -29,6 +30,7 @@ import AmenitiesSection from "../Components/AmenitiesSection";
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 interface Room {
     id: number | string;
+    slug?: string;
     name: string;
     description?: string;
     price_per_night: number;
@@ -157,7 +159,44 @@ export default function Home({
 
     return (
         <Layout>
-            <Head title="Welcome to Beach House | Luxury & Nature" />
+            <SEO
+                title="Beach House Botaland | Luxury Beach Resort in Limbe, Cameroon"
+                description="Experience luxury at Beach House Botaland, a Mediterranean-style beach resort on a private peninsula in Limbe, Cameroon. Book your stay with ocean views, fine dining, spa, and premium amenities."
+                canonical={window.location.origin + '/'}
+                ogImage={rooms[0]?.images?.[0]}
+                jsonLd={[
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'Hotel',
+                        name: 'Beach House Botaland',
+                        description: 'A Contemporary Mediterranean Style hotel resort set on a 4000Sqm private peninsula with spectacular views of the Atlantic Ocean.',
+                        url: window.location.origin,
+                        telephone: '+237 679447430',
+                        address: {
+                            '@type': 'PostalAddress',
+                            addressLocality: 'Limbe',
+                            addressRegion: 'Southwest',
+                            addressCountry: 'CM',
+                        },
+                        priceRange: '$$$',
+                        image: rooms[0]?.images?.[0],
+                    },
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'LocalBusiness',
+                        name: 'Beach House Botaland',
+                        description: 'Mediterranean-style beach resort in Limbe, Cameroon.',
+                        url: window.location.origin,
+                        telephone: '+237 679447430',
+                        address: {
+                            '@type': 'PostalAddress',
+                            addressLocality: 'Limbe',
+                            addressRegion: 'Southwest',
+                            addressCountry: 'CM',
+                        },
+                    },
+                ]}
+            />
 
             <main className="overflow-x-hidden">
                 {/* ── HERO ─────────────────────────────────────────────────────────── */}
@@ -737,7 +776,7 @@ function HomeRoomCard({ room, index }: { room: Room; index: number }) {
 
                     <div className="mt-8 pt-6 border-t border-[#2D5016]/10 flex items-center justify-between gap-3 flex-wrap">
                         <Link
-                            href={`/rooms/${room.id}`}
+                            href={`/rooms/${room.slug || room.id}`}
                             className={`group flex items-center gap-1.5 bg-[#2D5016] text-[#F5F2E8] text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-[#3D6B1F] transition-all ${
                                 !room.available ? "pointer-events-none opacity-55" : ""
                             }`}

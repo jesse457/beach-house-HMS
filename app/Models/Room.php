@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 #[Fillable([
     'room_type_id',
     'room_number',
+    'slug',
     'floor',
     'status',
     'price_per_night',
@@ -32,6 +33,26 @@ use HasFactory;
             'pictures' => 'array', // Crucial for JSON storage
             'videos' => 'array',   // Crucial for JSON storage
         ];
+    }
+
+    /**
+     * Auto-generate a unique slug from RoomType name + room number on creation.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Room $room) {
+            if (! $room->slug) {
+                $typeName = $room->roomType?->name ?? 'room';
+                $baseSlug = \Illuminate\Support\Str::slug($typeName . '-' . $room->room_number);
+                $slug = $baseSlug;
+                $counter = 1;
+                while (static::where('slug', $slug)->where('id', '!=', $room->id)->exists()) {
+                    $slug = $baseSlug . '-' . $counter;
+                    $counter++;
+                }
+                $room->slug = $slug;
+            }
+        });
     }
 
     public function roomType(): BelongsTo

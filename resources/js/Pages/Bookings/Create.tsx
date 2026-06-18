@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { useForm, Head, Link, router, PageProps } from '@inertiajs/react'
+import { useForm, Link, router, PageProps } from '@inertiajs/react'
+import SEO from '../Components/SEO'
 import {
   ChevronLeft,
   ChevronRight,
@@ -164,7 +165,11 @@ export default function BookingPage({ errors: inertiaErrors }: BookingPageProps)
 
   if (isSuccess) return (
     <Layout>
-      <Head title="Booking Confirmed | Beach House Botaland" />
+      <SEO
+        title="Booking Confirmed | Beach House Botaland"
+        description="Your reservation at Beach House Botaland has been submitted successfully."
+        noIndex
+      />
       <div className="min-h-[85vh] bg-[#F5F2E8] flex flex-col items-center justify-center text-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -212,7 +217,11 @@ export default function BookingPage({ errors: inertiaErrors }: BookingPageProps)
 
   return (
     <Layout>
-      <Head title="Checkout | Secure Luxury Reservation" />
+      <SEO
+        title="Checkout | Secure Luxury Reservation"
+        description="Complete your reservation at Beach House Botaland. Secure checkout for your luxury stay in Limbe, Cameroon."
+        noIndex
+      />
       <div className="bg-[#F5F2E8] min-h-screen pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 

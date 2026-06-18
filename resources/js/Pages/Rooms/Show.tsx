@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import SEO from '../../Components/SEO';
+import Breadcrumbs from '../../Components/Breadcrumbs';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Play, X, ChevronLeft, ChevronRight, CheckCircle2,
@@ -14,6 +16,7 @@ import { useCart } from '../../Context/CartContext';
 interface RoomProps {
     room: {
         id: number;
+        slug?: string;
         room_number: string;
         type_name?: string | null;
         description?: string | null;
@@ -122,11 +125,50 @@ export default function RoomShow({ room }: RoomProps) {
     return (
         <Layout>
             <div className="bg-[#F5F2E8] min-h-screen pb-28 md:pb-20 relative">
-                <Head title={`${title} - Room ${room.room_number}`} />
+                <SEO
+                    title={`${title} - Room ${room.room_number}`}
+                    description={description}
+                    canonical={window.location.origin + '/rooms/' + (room.slug || room.id)}
+                    ogImage={pictures[0]}
+                    jsonLd={[
+                        {
+                            '@context': 'https://schema.org',
+                            '@type': 'Product',
+                            name: `${title} - Room ${room.room_number}`,
+                            description: description,
+                            image: pictures,
+                            offers: {
+                                '@type': 'Offer',
+                                price: room.price.replace(/,/g, ''),
+                                priceCurrency: 'XAF',
+                                availability: room.is_occupied
+                                    ? 'https://schema.org/InStock'
+                                    : 'https://schema.org/InStock',
+                                url: window.location.href,
+                            },
+                        },
+                        {
+                            '@context': 'https://schema.org',
+                            '@type': 'BreadcrumbList',
+                            itemListElement: [
+                                { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin + '/' },
+                                { '@type': 'ListItem', position: 2, name: 'Rooms', item: window.location.origin + '/rooms' },
+                                { '@type': 'ListItem', position: 3, name: `${title} - Room ${room.room_number}` },
+                            ],
+                        },
+                    ]}
+                />
 
                 {/* ── BACK NAVIGATION HERO HEADER ── */}
                 <div className="bg-[#2D5016] pt-24 pb-6">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <Breadcrumbs
+                            items={[
+                                { label: 'Home', href: '/' },
+                                { label: 'Rooms', href: '/rooms' },
+                                { label: `${title} - Room ${room.room_number}` },
+                            ]}
+                        />
                         <Link
                             href="/rooms"
                             className="inline-flex items-center gap-2 text-sm font-semibold text-[#C8DBA8] hover:text-[#F5F2E8] transition-colors mb-4 group"
@@ -158,7 +200,7 @@ export default function RoomShow({ room }: RoomProps) {
                                         {current.type === 'video' ? (
                                             <video src={current.src} poster={current.thumb} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                                         ) : (
-                                            <img src={current.src} className="w-full h-full object-cover" alt="Selected Room View" />
+                                            <img src={current.src} className="w-full h-full object-cover" alt={`${title} - Room ${room.room_number}`} />
                                         )}
                                     </motion.div>
                                 </AnimatePresence>
@@ -197,7 +239,7 @@ export default function RoomShow({ room }: RoomProps) {
                                                 : 'border-transparent opacity-60 hover:opacity-100'
                                         }`}
                                     >
-                                        <img src={media.thumb} className="w-full h-full object-cover" alt={`Thumbnail ${i+1}`} />
+                                        <img src={media.thumb} className="w-full h-full object-cover" alt={`${title} Room ${room.room_number} view ${i + 1}`} />
                                         {media.type === 'video' && (
                                             <span className="absolute inset-0 m-auto h-8 w-8 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-xs">
                                                 <Play className="fill-white translate-x-0.5" size={14} />
@@ -386,7 +428,7 @@ export default function RoomShow({ room }: RoomProps) {
                                 {current.type === 'video' ? (
                                     <video src={current.src} controls autoPlay className="max-h-[75vh] max-w-full rounded-xl outline-none" />
                                 ) : (
-                                    <img src={current.src} className="max-h-[75vh] max-w-full object-contain rounded-xl" alt="Enlarged Room View" />
+                                    <img src={current.src} className="max-h-[75vh] max-w-full object-contain rounded-xl" alt={`Enlarged view of ${title} - Room ${room.room_number}`} />
                                 )}
                             </div>
                         </motion.div>

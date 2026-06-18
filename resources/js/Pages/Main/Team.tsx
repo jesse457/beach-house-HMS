@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Head, router, usePage } from '@inertiajs/react'
+import { router, usePage } from '@inertiajs/react'
+import SEO from '../../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserCheck, UserPlus, Users, ArrowLeft } from 'lucide-react'
 import Layout from '../../Layouts/Layout'
@@ -62,7 +63,11 @@ export default function Team({ members = [], followedIds = [] }: TeamProps) {
 
   return (
     <Layout>
-      <Head title="Meet our Dedicated Team | Beach House Botaland" />
+      <SEO
+        title="Meet our Dedicated Team | Beach House Botaland"
+        description="Meet the passionate hospitality professionals at Beach House Botaland who ensure your stay in Limbe, Cameroon is unforgettable."
+        canonical={window.location.origin + '/team'}
+      />
 
       <main className="min-h-screen bg-[#F5F2E8]">
         {/* ── HERO SECTION ───────────────────────────────────────────── */}
