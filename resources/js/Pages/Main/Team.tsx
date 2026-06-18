@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
-import { router, usePage } from '@inertiajs/react'
+import React from 'react'
 import SEO from '../../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserCheck, UserPlus, Users, ArrowLeft } from 'lucide-react'
+import { Users } from 'lucide-react'
 import Layout from '../../Layouts/Layout'
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
@@ -17,7 +16,6 @@ interface TeamMember {
 
 interface TeamProps {
   members: TeamMember[];
-  followedIds?: (string | number)[];
 }
 
 // ─── REVEAL ANIMATION ───────────────────────────────────────────────────────
@@ -34,32 +32,7 @@ const Reveal = ({ children, className = "" }: { children: React.ReactNode; class
 );
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-export default function Team({ members = [], followedIds = [] }: TeamProps) {
-  const { auth } = usePage<any>().props;
-  const isLoggedIn = !!auth?.user;
-
-  const [localFollows, setLocalFollows] = useState<Set<string | number>>(new Set(followedIds));
-  const [processingId, setProcessingId] = useState<string | number | null>(null);
-
-  function handleToggleFollow(member: TeamMember) {
-    if (!isLoggedIn) {
-        router.visit('/login');
-        return;
-    }
-
-    setProcessingId(member.id);
-    router.post(`/team/${member.id}/follow`, {}, {
-      preserveScroll: true,
-      onSuccess: () => {
-        setLocalFollows((prev) => {
-          const next = new Set(prev);
-          next.has(member.id) ? next.delete(member.id) : next.add(member.id);
-          return next;
-        });
-      },
-      onFinish: () => setProcessingId(null)
-    });
-  }
+export default function Team({ members = [] }: TeamProps) {
 
   return (
     <Layout>
@@ -139,10 +112,6 @@ export default function Team({ members = [], followedIds = [] }: TeamProps) {
                       </div>
                     </div>
 
-                    {/* Action Button Footer */}
-                    <div className="p-6 pt-0">
-
-                    </div>
                   </motion.div>
                 ))}
               </motion.div>
