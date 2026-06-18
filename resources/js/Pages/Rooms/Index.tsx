@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from '@inertiajs/react'
-import SEO from '../Components/SEO'
+import SEO from '../../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowRight, ShoppingBag, Star, X, Check, Wifi, Tv, Wind,

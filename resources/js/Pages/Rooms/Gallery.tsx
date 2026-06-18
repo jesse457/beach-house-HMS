@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { router } from '@inertiajs/react'
-import SEO from '../Components/SEO'
+import SEO from '../../Components/SEO'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Play, ChevronLeft, ChevronRight, Images, Video, Compass } from 'lucide-react'
 

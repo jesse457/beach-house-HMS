@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useForm, Link, router, PageProps } from '@inertiajs/react'
-import SEO from '../Components/SEO'
+import SEO from '../../Components/SEO'
 import {
   ChevronLeft,
   ChevronRight,
