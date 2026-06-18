@@ -40,10 +40,7 @@ Route::get('/team', function (Request $request) {
     });
 
     return Inertia::render('Main/Team', [
-        'members' => $members,
-        'followedIds' => auth()->user()
-            ? auth()->user()->following()->pluck('team_member_id')
-            : [],
+        'members' => $members
     ]);
 })->name('team');
 
