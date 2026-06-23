@@ -9,6 +9,7 @@ use App\Models\Room;
 use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -18,6 +19,7 @@ class MainController extends Controller
 
 public function index()
 {
+    $startTime = microtime(true);
     $s3 = Storage::disk('s3');
 
     // Fetch active amenities
@@ -45,9 +47,9 @@ public function index()
             ];
         });
 
-    // Fetch the top 5 rooms matching your exact Eloquent columns & relationships
+    // Fetch the top 5 available rooms
     $rooms = Room::with(['roomType', 'amenities'])
-        ->where('is_occupied', false) // Use availability filter
+        ->where('is_occupied', false)
         ->limit(5)
         ->get()
         ->map(function ($room) use ($s3) {
@@ -56,15 +58,11 @@ public function index()
                 return str_starts_with($path, 'http') ? $path : $s3->url($path);
             };
 
-            // Map "pictures" array cast to absolute URLs
             $images = [];
             if (is_array($room->pictures)) {
-                $images = array_map(function($path) use ($getUrl) {
-                    return $getUrl($path);
-                }, $room->pictures);
+                $images = array_map(fn($path) => $getUrl($path), $room->pictures);
             }
 
-            // Extract the first video URL if it exists in the "videos" JSON array
             $videoUrl = null;
             if (is_array($room->videos) && count($room->videos) > 0) {
                 $videoUrl = $getUrl($room->videos[0]);
@@ -72,7 +70,6 @@ public function index()
 
             return [
                 'id' => $room->id,
-                // Combine room type name with room number for clear identification
                 'name' => ($room->roomType?->name ?? 'Luxury Room') . ' ' . $room->room_number,
                 'description' => $room->roomType?->description ?? 'A beautifully appointed hotel room designed for your comfort.',
                 'price_per_night' => (float) $room->price_per_night,
@@ -80,7 +77,6 @@ public function index()
                 'available' => !$room->is_occupied,
                 'images' => $images,
                 'video_url' => $videoUrl,
-                // Pluck amenity names from the BelongsToMany relation
                 'amenities' => $room->amenities->map(fn($a) => [
                     'name' => $a->name,
                     'icon' => $a->icon,
@@ -88,11 +84,19 @@ public function index()
             ];
         });
 
+    $elapsed = round(microtime(true) - $startTime, 3);
+    Log::info('Homepage rendered', [
+        'amenities' => $amenities->count(),
+        'gallery_items' => $featuredGallery->count(),
+        'featured_rooms' => $rooms->count(),
+        'time_ms' => $elapsed * 1000,
+    ]);
+
     return Inertia::render('Home', [
         'featuredGallery' => $featuredGallery,
         'amenities' => $amenities,
         'rooms' => $rooms,
-        'testimonials' => [], // Passed as empty since testimonials are no longer queried
+        'testimonials' => [],
     ]);
 }
     public function gallery(Request $request)
@@ -101,6 +105,7 @@ public function index()
         $page = (int) $request->query('page', 1);
         $type = $request->query('type');           // 'image', 'video', or null (all)
         $category = $request->query('category');   // RoomType name or null (all)
+        $startTime = microtime(true);
 
         $s3 = Storage::disk('s3');
 
@@ -189,6 +194,18 @@ public function index()
         $roomList = $rooms->map(fn ($r) => [
             'id' => $r->id,
             'name' => 'Room '.$r->room_number,
+        ]);
+
+        $elapsed = round(microtime(true) - $startTime, 3);
+        Log::info('Gallery page rendered', [
+            'page' => $page,
+            'per_page' => $perPage,
+            'type_filter' => $type ?? 'all',
+            'category_filter' => $category ?? 'all',
+            'filtered_total' => $total,
+            'total_photos' => $totalPhotos,
+            'total_videos' => $totalVideos,
+            'time_ms' => $elapsed * 1000,
         ]);
 
         return Inertia::render('Rooms/Gallery', [

@@ -11,6 +11,7 @@ use App\Models\Booking;
 use App\Models\Guest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -18,21 +19,19 @@ use Illuminate\Http\Request;
 class RoomController extends Controller
 {
     /**
-     * Renders the Rooms/Index.tsx page
-     * ✅ EXCLUDES occupied rooms from public listing
+     * Renders the Rooms/Index.tsx page — only available, unoccupied rooms.
      */
     public function index()
 {
+    $startTime = microtime(true);
     $s3 = Storage::disk('s3');
 
-    // Use paginate instead of get
     $rooms = Room::with(['roomType', 'amenities'])
         ->where('status', 'available')
         ->where('is_occupied', false)
         ->orderBy('price_per_night', 'asc')
-        ->paginate(8) // Adjust number per page as needed
+        ->paginate(8)
         ->through(function ($room) use ($s3) {
-            // Apply transformations here
             $room->pictures = collect($room->pictures ?? [])->map(fn($path) =>
                 $path && !str_starts_with($path, 'http') ? $s3->url($path) : $path
             )->filter()->values();
@@ -47,8 +46,17 @@ class RoomController extends Controller
             return $room;
         });
 
+    $elapsed = round(microtime(true) - $startTime, 3);
+    Log::info('Room listing rendered', [
+        'page' => $rooms->currentPage(),
+        'per_page' => $rooms->perPage(),
+        'showing' => $rooms->count(),
+        'total_rooms' => $rooms->total(),
+        'time_ms' => $elapsed * 1000,
+    ]);
+
     return inertia('Rooms/Index', [
-        'rooms' => $rooms, // This now contains the pagination metadata (links, current_page, etc)
+        'rooms' => $rooms,
         'roomTypes' => RoomType::all(),
         'amenities' => Amenity::all(),
     ]);
@@ -64,6 +72,8 @@ class RoomController extends Controller
      */
     public function show(string $roomIdentifier)
     {
+        $startTime = microtime(true);
+
         // Try slug first, then numeric ID for backward compatibility
         $room = Room::where('slug', $roomIdentifier)
             ->orWhere(function ($q) use ($roomIdentifier) {
@@ -75,11 +85,19 @@ class RoomController extends Controller
 
         // Redirect old numeric URLs to new SEO-friendly slug URLs
         if (is_numeric($roomIdentifier) && $room->slug) {
+            Log::info('Room: redirected numeric URL to slug', [
+                'from' => $roomIdentifier,
+                'to' => $room->slug,
+            ]);
             return redirect()->route('rooms.show', $room->slug, 301);
         }
 
-        // ✅ Prevent viewing occupied rooms directly via URL
+        // Prevent viewing occupied rooms directly via URL
         if ($room->is_occupied && $room->status === 'available') {
+            Log::info('Room: occupied room access blocked', [
+                'room_id' => $room->id,
+                'room_number' => $room->room_number,
+            ]);
             return redirect()->route('rooms.index')
                 ->with('info', 'This room is currently booked. Please explore our other available suites.');
         }
@@ -102,6 +120,18 @@ class RoomController extends Controller
             return $url ? ['url' => $url, 'thumbnail' => $thumbnail] : null;
         })->filter()->values();
 
+        $elapsed = round(microtime(true) - $startTime, 3);
+        Log::info('Room detail page rendered', [
+            'room_id' => $room->id,
+            'room_number' => $room->room_number,
+            'room_type' => $room->roomType?->name,
+            'is_occupied' => $room->is_occupied,
+            'picture_count' => $pictures->count(),
+            'video_count' => $videos->count(),
+            'amenity_count' => $room->amenities->count(),
+            'time_ms' => $elapsed * 1000,
+        ]);
+
         return Inertia::render('Rooms/Show', [
             'room' => [
                 'id' => $room->id,
@@ -110,7 +140,7 @@ class RoomController extends Controller
                 'type_name' => $room->roomType?->name,
                 'description' => $room->roomType?->description,
                 'price' => number_format($room->price_per_night, 2),
-                'is_occupied' => $room->is_occupied, // ✅ Pass to frontend for UI handling
+                'is_occupied' => $room->is_occupied,
                 'pictures' => $pictures,
                 'videos' => $videos,
                 'amenities' => $room->amenities->map(fn($a) => [
