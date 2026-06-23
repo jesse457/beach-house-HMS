@@ -171,6 +171,9 @@ return [
     'include_files' => [
         '*.log',
         '**/*.log',
+        // Nginx logs (mounted from host via docker-compose volume)
+        '/var/log/nginx/*access*' => 'Nginx Access',
+        '/var/log/nginx/*error*' => 'Nginx Error',
     ],
 
     /*
