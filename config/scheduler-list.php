@@ -23,11 +23,9 @@ return [
 
     /*
      * Optional authorization callback. Return true to allow access.
+     * Use the 'ability' Gate instead — closures break config caching.
      */
-    'authorize' => function (\Illuminate\Http\Request $request) {
-        $user = $request->user();
-        return $user && in_array($user->role->value, ['admin', 'receptionist']);
-    },
+    'authorize' => null,
 
     /*
      * Whether the scheduler dashboard is enabled.

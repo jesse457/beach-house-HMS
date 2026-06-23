@@ -40,8 +40,12 @@ class AppServiceProvider extends ServiceProvider
                 );
             });
 
-        // Authorize admin/receptionist users to access Log Viewer
+        // Authorize admin/receptionist users to access Log Viewer and Scheduler List
         Gate::define('viewLogViewer', function (User $user) {
+            return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]);
+        });
+
+        Gate::define('viewSchedulerList', function (User $user) {
             return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]);
         });
     }
