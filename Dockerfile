@@ -24,7 +24,7 @@ RUN npm ci && npm run build
 FROM dunglas/frankenphp:1-php8.4-alpine AS runner
 
 # Install necessary system extensions (intl is included here for Filament!)
-RUN apk add --no-cache supervisor && \
+RUN apk add --no-cache supervisor mariadb-client && \
     install-php-extensions \
     pcntl \
     bcmath \
@@ -52,7 +52,7 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 
 # Create writable directories for supervisor and runtime files
 # ADDED /app/public to the chown list so Octane can write frankenphp-worker.php
-RUN mkdir -p /var/log/supervisor /run /app/storage/logs && \
+RUN mkdir -p /var/log/supervisor /run /app/storage/logs /app/storage/app/backups && \
     chown -R www-data:www-data \
     /app/storage \
     /app/bootstrap/cache \

@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Enums\UserRole;
+use App\Models\User;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,5 +39,10 @@ class AppServiceProvider extends ServiceProvider
                     SecurityScheme::http('bearer')
                 );
             });
+
+        // Authorize admin/receptionist users to access Log Viewer
+        Gate::define('viewLogViewer', function (User $user) {
+            return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]);
+        });
     }
 }
