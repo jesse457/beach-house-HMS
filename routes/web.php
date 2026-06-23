@@ -4,6 +4,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\RoomController;
 use App\Models\Booking;
+use App\Models\Service;
 use App\Models\TeamMember;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,22 @@ Route::get('/team', function (Request $request) {
         'members' => $members
     ]);
 })->name('team');
+
+Route::get('/services', function (Request $request) {
+    $services = Service::where('is_active', true)
+        ->orderBy('sort_order')
+        ->get()
+        ->map(function ($service) {
+            if ($service->image && !filter_var($service->image, FILTER_VALIDATE_URL)) {
+                $service->image = Storage::disk('s3')->url($service->image);
+            }
+            return $service;
+        });
+
+    return Inertia::render('Main/Services', [
+        'services' => $services
+    ]);
+})->name('services');
 
 Route::get('/location', function (Request $request) {
     return Inertia::render('Main/Location');

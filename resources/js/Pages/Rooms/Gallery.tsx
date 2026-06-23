@@ -42,6 +42,8 @@ interface GalleryProps {
   };
   rooms: Room[];
   dbCategories: string[]; // Dynamic categories from RoomType model
+  totalPhotos: number;
+  totalVideos: number;
 }
 
 // ─── REVEAL ANIMATION ───────────────────────────────────────────────────────
@@ -58,12 +60,19 @@ const Reveal = ({ children, className = "" }: { children: React.ReactNode; class
 );
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-export default function Gallery({ items, rooms = [], dbCategories = [] }: GalleryProps) {
-  const [tab, setTab] = useState<'all' | 'photos' | 'videos'>('all')
-  const [activeCategory, setActiveCategory] = useState('All')
+export default function Gallery({ items, rooms = [], dbCategories = [], totalPhotos = 0, totalVideos = 0 }: GalleryProps) {
+  // Derive current tab from URL query params so state survives page reloads
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlType = urlParams.get('type')
+  const urlCategory = urlParams.get('category')
+
+  const [tab, setTab] = useState<'all' | 'photos' | 'videos'>(
+    urlType === 'video' ? 'videos' : urlType === 'image' ? 'photos' : 'all'
+  )
+  const [activeCategory, setActiveCategory] = useState(urlCategory || 'All')
   const [lightbox, setLightbox] = useState<{ item: GalleryItem; index: number } | null>(null)
 
-  // Extract paginated data
+  // Data is already filtered server-side — use it directly
   const galleryData = items?.data ?? []
   const currentPage = items?.current_page ?? 1
   const lastPage = items?.last_page ?? 1
@@ -73,22 +82,48 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
   // Combine general category headers with dynamic RoomTypes
   const allCategories = ['All', ...dbCategories];
 
-  // Media Filtering Logic (client-side filtering of current page)
-  const photos = galleryData.filter((i) => i.type === 'image')
-  const videos = galleryData.filter((i) => i.type === 'video')
+  // Build query params for the current filter state
+  const buildParams = (overrides: Record<string, any> = {}) => {
+    const params: Record<string, any> = {}
+    const effectiveType = overrides.type ?? (tab === 'photos' ? 'image' : tab === 'videos' ? 'video' : undefined)
+    const effectiveCategory = overrides.category ?? activeCategory
+    if (effectiveType) params.type = effectiveType
+    if (effectiveCategory && effectiveCategory !== 'All') params.category = effectiveCategory
+    return { ...params, ...overrides }
+  }
 
-  const baseItems = tab === 'photos' ? photos : tab === 'videos' ? videos : galleryData
-
-  const filtered = baseItems.filter((item) =>
-    activeCategory === 'All' || item.category === activeCategory
-  )
-
-  // Page navigation handler
+  // Navigate to a specific page, preserving active filters
   const goToPage = (page: number) => {
     if (page < 1 || page > lastPage) return
     router.get(
       window.location.pathname,
-      { page },
+      buildParams({ page }),
+      { preserveState: true, preserveScroll: true, replace: true }
+    )
+  }
+
+  // Switch media type tab — reload from server with new filter
+  const switchTab = (newTab: 'all' | 'photos' | 'videos') => {
+    const newType = newTab === 'photos' ? 'image' : newTab === 'videos' ? 'video' : undefined
+    setTab(newTab)
+    setActiveCategory('All')
+    const params: Record<string, any> = { page: 1 }
+    if (newType) params.type = newType
+    router.get(
+      window.location.pathname,
+      params,
+      { preserveState: true, preserveScroll: true, replace: true }
+    )
+  }
+
+  // Switch category — reload from server with new filter
+  const switchCategory = (cat: string) => {
+    setActiveCategory(cat)
+    const params = buildParams({ page: 1, category: cat })
+    if (cat === 'All') delete params.category
+    router.get(
+      window.location.pathname,
+      params,
       { preserveState: true, preserveScroll: true, replace: true }
     )
   }
@@ -96,15 +131,15 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
   // Lightbox Navigation
   const goNext = useCallback(() => {
     if (!lightbox) return
-    const nextIdx = (lightbox.index + 1) % filtered.length
-    setLightbox({ item: filtered[nextIdx], index: nextIdx })
-  }, [lightbox, filtered])
+    const nextIdx = (lightbox.index + 1) % galleryData.length
+    setLightbox({ item: galleryData[nextIdx], index: nextIdx })
+  }, [lightbox, galleryData])
 
   const goPrev = useCallback(() => {
     if (!lightbox) return
-    const prevIdx = (lightbox.index - 1 + filtered.length) % filtered.length
-    setLightbox({ item: filtered[prevIdx], index: prevIdx })
-  }, [lightbox, filtered])
+    const prevIdx = (lightbox.index - 1 + galleryData.length) % galleryData.length
+    setLightbox({ item: galleryData[prevIdx], index: prevIdx })
+  }, [lightbox, galleryData])
 
   // Key Bindings
   useEffect(() => {
@@ -161,13 +196,13 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
           <Reveal className="pt-10 pb-4">
             <div className="flex flex-wrap items-center gap-2 bg-white/80 backdrop-blur-md rounded-2xl p-1.5 border border-[#2D5016]/10 w-fit shadow-xs">
               {[
-                { key: 'all', label: 'All Media', count: total, icon: null },
-                { key: 'photos', label: 'Photos', count: photos.length, icon: Images },
-                { key: 'videos', label: 'Videos', count: videos.length, icon: Video },
+                { key: 'all', label: 'All Media', count: totalPhotos + totalVideos, icon: null },
+                { key: 'photos', label: 'Photos', count: totalPhotos, icon: Images },
+                { key: 'videos', label: 'Videos', count: totalVideos, icon: Video },
               ].map((t) => (
                 <button
                   key={t.key}
-                  onClick={() => { setTab(t.key as any); setActiveCategory('All') }}
+                  onClick={() => switchTab(t.key as 'all' | 'photos' | 'videos')}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                     tab === t.key ? 'bg-[#2D5016] text-[#F5F2E8] shadow-xs' : 'text-neutral-500 hover:text-[#2D5016]'
                   }`}
@@ -190,7 +225,7 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
               {allCategories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => switchCategory(cat)}
                   className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-200 border ${
                     activeCategory === cat
                       ? 'bg-[#2D5016] text-[#F5F2E8] border-[#2D5016] shadow-xs'
@@ -206,15 +241,15 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
           {/* ── MEDIA GRID ───────────────────────────────────────────────── */}
           <div className="mt-8">
             <AnimatePresence mode="wait">
-              {filtered.length > 0 ? (
+              {galleryData.length > 0 ? (
                 <motion.div
-                    key={`${tab}-${activeCategory}`}
+                    key={`${tab}-${activeCategory}-${currentPage}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                 >
-                    {filtered.map((item, i) => (
+                    {galleryData.map((item, i) => (
                     item.type === 'video' ? (
                         <VideoCard key={item.id} item={item} index={i} onClick={() => setLightbox({ item, index: i })} />
                     ) : (
@@ -299,7 +334,7 @@ export default function Gallery({ items, rooms = [], dbCategories = [] }: Galler
             <Lightbox
               item={lightbox.item}
               index={lightbox.index}
-              total={filtered.length}
+              total={galleryData.length}
               onClose={() => setLightbox(null)}
               onNext={goNext}
               onPrev={goPrev}

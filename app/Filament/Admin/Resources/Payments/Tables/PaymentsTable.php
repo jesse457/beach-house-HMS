@@ -4,9 +4,7 @@ namespace App\Filament\Admin\Resources\Payments\Tables;
 
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -68,12 +66,7 @@ class PaymentsTable
                     ]),
             ])
             ->actions([
-                EditAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                ViewAction::make(),
             ])
             ->defaultSort('paid_at', 'desc');
     }

@@ -285,7 +285,7 @@ export default function Home({
                                 transition={{ duration: 0.8, delay: 0.7 }}
                                 className="mt-16 flex gap-10"
                             >
-                                {[
+                                {/* {[
                                     { value: "15+", label: "Luxury Rooms" },
                                     { value: "4.8★", label: "Guest Rating" },
                                     { value: "10k+", label: "Happy Guests" },
@@ -298,7 +298,7 @@ export default function Home({
                                             {label}
                                         </div>
                                     </div>
-                                ))}
+                                ))} */}
                             </motion.div>
                         </div>
                     </motion.div>
@@ -364,7 +364,7 @@ export default function Home({
                 </div>
 
                 {/* ── STORY / ABOUT ────────────────────────────────────────────────── */}
-                <section id="story" className="py-28 bg-[#F5F2E8]">
+                {/* <section id="story" className="py-28 bg-[#F5F2E8]">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                             <Reveal direction="right">
@@ -456,7 +456,7 @@ export default function Home({
                             </Reveal>
                         </div>
                     </div>
-                </section>
+                </section> */}
 
                 {/* ── AMENITIES & GALLERY ────────────────────────────────────────────────── */}
                 <AmenitiesSection amenities={amenities} />
@@ -563,7 +563,7 @@ export default function Home({
                                     Browse Rooms
                                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                 </Link>
-                               
+
                             </div>
                         </Reveal>
                     </div>

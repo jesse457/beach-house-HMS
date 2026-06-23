@@ -25,6 +25,7 @@ export default function Navbar() {
                     <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-neutral-600">
                         <Link href="/rooms" className="hover:text-[#2D5016] transition-colors">Rooms</Link>
                         <Link href="/gallery" className="hover:text-[#2D5016] transition-colors">Gallery</Link>
+                        <Link href="/services" className="hover:text-[#2D5016] transition-colors">Services</Link>
                         <Link href="/team" className="hover:text-[#2D5016] transition-colors">Our Team</Link>
                         <Link href="/location" className="hover:text-[#2D5016] transition-colors">Location</Link>
                     </nav>

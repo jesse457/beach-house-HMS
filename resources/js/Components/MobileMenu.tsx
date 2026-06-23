@@ -20,6 +20,7 @@ export default function MobileMenu({ user, isAdmin }: { user: any | null; isAdmi
                     {[
                         { href: '/rooms', label: 'Rooms' },
                         { href: '/gallery', label: 'Gallery' },
+                        { href: '/services', label: 'Services' },
                         { href: '/team', label: 'Our Team' },
                         { href: '/location', label: 'Location' },
                     ].map(({ href, label }) => (

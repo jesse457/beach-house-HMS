@@ -96,6 +96,8 @@ public function index()
     {
         $perPage = 12;
         $page = (int) $request->query('page', 1);
+        $type = $request->query('type');           // 'image', 'video', or null (all)
+        $category = $request->query('category');   // RoomType name or null (all)
 
         $s3 = Storage::disk('s3');
 
@@ -153,7 +155,22 @@ public function index()
         // 3. Merge both collections into one
         $allItems = collect($galleryItems)->merge($roomMedia)->values();
 
-        // 4. Paginate the merged collection manually
+        // Compute total counts per type before filtering (for the tab badges)
+        $totalPhotos = $allItems->filter(fn($item) => $item['type'] === 'image')->count();
+        $totalVideos = $allItems->filter(fn($item) => $item['type'] === 'video')->count();
+
+        // 4. Apply server-side filters so pagination reflects them
+        if ($type === 'image') {
+            $allItems = $allItems->filter(fn($item) => $item['type'] === 'image')->values();
+        } elseif ($type === 'video') {
+            $allItems = $allItems->filter(fn($item) => $item['type'] === 'video')->values();
+        }
+
+        if ($category && $category !== 'All') {
+            $allItems = $allItems->filter(fn($item) => $item['category'] === $category)->values();
+        }
+
+        // 5. Paginate the (possibly filtered) collection
         $total = $allItems->count();
         $paginatedItems = $allItems->slice(($page - 1) * $perPage, $perPage)->values();
 
@@ -165,7 +182,7 @@ public function index()
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        // 5. Get a list of rooms for the UI prop
+        // 6. Get a list of rooms for the UI prop
         $roomList = $rooms->map(fn ($r) => [
             'id' => $r->id,
             'name' => 'Room '.$r->room_number,
@@ -175,6 +192,8 @@ public function index()
             'items' => $paginator,
             'rooms' => $roomList,
             'dbCategories' => RoomType::pluck('name')->toArray(),
+            'totalPhotos' => $totalPhotos,
+            'totalVideos' => $totalVideos,
         ]);
     }
 }

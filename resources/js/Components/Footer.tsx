@@ -21,10 +21,8 @@ export default function Footer() {
                         <ul className="space-y-2.5 text-sm">
                             {[
                                 { href: '/rooms', label: 'Our Rooms' },
-                                { href: '/services', label: 'Services' },
                                 { href: '/team', label: 'Our Team' },
                                 { href: '/location', label: 'Location & Map' },
-                                { href: '/login', label: 'Book Now' },
                             ].map(({ href, label }) => (
                                 <li key={href}>
                                     <Link href={href} className="hover:text-[#F5F2E8] transition-colors">{label}</Link>

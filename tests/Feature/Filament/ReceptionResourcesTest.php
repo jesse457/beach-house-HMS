@@ -184,21 +184,31 @@ test('reception payment list page loads', function () {
     $response->assertStatus(200);
 });
 
-test('reception payment create page loads', function () {
+test('reception payment create page returns 404', function () {
     $response = $this->actingAs(recReceptionist())
         ->get('/reception/payments/create');
+
+    $response->assertStatus(404);
+});
+
+test('reception payment view page loads', function () {
+    $booking = createTestBooking();
+    $payment = Payment::factory()->for($booking)->create();
+
+    $response = $this->actingAs(recReceptionist())
+        ->get("/reception/payments/{$payment->id}");
 
     $response->assertStatus(200);
 });
 
-test('reception payment edit page loads', function () {
+test('reception payment edit page returns 404', function () {
     $booking = createTestBooking();
     $payment = Payment::factory()->for($booking)->create();
 
     $response = $this->actingAs(recReceptionist())
         ->get("/reception/payments/{$payment->id}/edit");
 
-    $response->assertStatus(200);
+    $response->assertStatus(404);
 });
 
 // ============================================================

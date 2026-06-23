@@ -140,14 +140,25 @@ test('admin payment list page loads', function () {
     $response->assertStatus(200);
 });
 
-test('admin payment create page loads', function () {
+test('admin payment create page returns 404', function () {
     $response = $this->actingAs(createAdmin())
         ->get('/admin/payments/create');
+
+    $response->assertStatus(404);
+});
+
+test('admin payment view page loads', function () {
+    $guest = \App\Models\Guest::factory()->create();
+    $booking = \App\Models\Booking::factory()->for($guest)->create();
+    $payment = Payment::factory()->for($booking)->create();
+
+    $response = $this->actingAs(createAdmin())
+        ->get("/admin/payments/{$payment->id}");
 
     $response->assertStatus(200);
 });
 
-test('admin payment edit page loads', function () {
+test('admin payment edit page returns 404', function () {
     $guest = \App\Models\Guest::factory()->create();
     $booking = \App\Models\Booking::factory()->for($guest)->create();
     $payment = Payment::factory()->for($booking)->create();
@@ -155,7 +166,7 @@ test('admin payment edit page loads', function () {
     $response = $this->actingAs(createAdmin())
         ->get("/admin/payments/{$payment->id}/edit");
 
-    $response->assertStatus(200);
+    $response->assertStatus(404);
 });
 
 // ============================================================

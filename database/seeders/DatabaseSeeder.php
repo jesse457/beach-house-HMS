@@ -10,6 +10,7 @@ use App\Models\GuestOrderItem;
 use App\Models\Payment;
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Models\Service;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Enums\BookingStatus;
@@ -37,6 +38,22 @@ class DatabaseSeeder extends Seeder
 
         // 2. Create Amenities
         $amenities = Amenity::factory()->count(10)->create();
+
+        // 2b. Create Services
+        Service::factory()->count(12)->sequence(
+            ['sort_order' => 1],
+            ['sort_order' => 2],
+            ['sort_order' => 3],
+            ['sort_order' => 4],
+            ['sort_order' => 5],
+            ['sort_order' => 6],
+            ['sort_order' => 7],
+            ['sort_order' => 8],
+            ['sort_order' => 9],
+            ['sort_order' => 10],
+            ['sort_order' => 11],
+            ['sort_order' => 12],
+        )->create();
 
         // 3. Create Room Types and Rooms
         $types = ['Economy', 'Standard', 'Luxury', 'VIP'];
