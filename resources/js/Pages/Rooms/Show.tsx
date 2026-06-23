@@ -9,6 +9,10 @@ import {
     Calendar, ArrowLeft, ShieldCheck, Clock
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+// Heroicons for amenity icon resolution (matches Filament DB format)
+import * as OutlineIcons from '@heroicons/react/24/outline';
+import * as SolidIcons from '@heroicons/react/24/solid';
+import * as MiniIcons from '@heroicons/react/20/solid';
 import Layout from '../../Layouts/Layout';
 import { useCart } from '../../Context/CartContext';
 
@@ -42,20 +46,25 @@ const Reveal = ({ children, className = "" }: { children: React.ReactNode; class
 
 // ─── SMART AMENITY ICON RESOLVER ──────────────────────────────────────────
 function AmenityIcon({ iconName, amenityName, size = 20 }: { iconName: string; amenityName: string; size?: number }) {
-    const normalizedName = amenityName.toLowerCase();
+    // 1. Resolve by Heroicon format (DB stores e.g. "heroicon-o-wifi")
+    if (iconName && iconName.startsWith('heroicon')) {
+        let IconSet: any = OutlineIcons;
+        if (iconName.startsWith('heroicon-s-')) IconSet = SolidIcons;
+        else if (iconName.startsWith('heroicon-m-')) IconSet = MiniIcons;
 
-    // 1. First fallback pattern: match based on amenity name (consistent with Index page)
+        const cleanName = iconName.replace(/^(heroicon-o-|heroicon-s-|heroicon-m-|heroicon-c-|heroicon-)/, '');
+        const pascalName = cleanName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        const IconComponent = IconSet[`${pascalName}Icon`] || OutlineIcons[`${pascalName}Icon`];
+        if (IconComponent) return <IconComponent style={{ width: size, height: size }} />;
+    }
+
+    // 2. Fallback: match by amenity name keywords (Lucide icons)
+    const normalizedName = amenityName.toLowerCase();
     if (normalizedName.includes('wifi')) return <Wifi size={size} />;
     if (normalizedName.includes('tv')) return <Tv size={size} />;
     if (normalizedName.includes('air') || normalizedName.includes('ac')) return <Wind size={size} />;
     if (normalizedName.includes('breakfast') || normalizedName.includes('dining')) return <Utensils size={size} />;
     if (normalizedName.includes('coffee') || normalizedName.includes('tea')) return <Coffee size={size} />;
-
-    // 2. Second fallback pattern: match by raw database icon string
-    if (iconName) {
-        const ResolvedIcon = (LucideIcons as any)[iconName];
-        if (ResolvedIcon) return <ResolvedIcon size={size} />;
-    }
 
     // 3. Absolute fallback
     return <CheckCircle2 size={size} />;

@@ -6,6 +6,10 @@ import {
     ArrowRight, ShoppingBag, Star, X, Check, Wifi, Tv, Wind,
     SlidersHorizontal, Search, Trash2, MapPin, Coffee, Utensils
 } from 'lucide-react'
+// Heroicons for amenity icon resolution (matches Filament DB format)
+import * as OutlineIcons from '@heroicons/react/24/outline';
+import * as SolidIcons from '@heroicons/react/24/solid';
+import * as MiniIcons from '@heroicons/react/20/solid';
 
 // Layout & Context
 import Layout from '../../Layouts/Layout'
@@ -419,7 +423,7 @@ function RoomCard({ room, index, getUrl }: { room: Room, index: number, getUrl: 
                     <div className="flex flex-wrap gap-1.5 mb-6">
                         {room.amenities.slice(0, 3).map(a => (
                             <div key={a.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF9F6] text-neutral-600 border border-[#2D5016]/5 text-[10px] font-semibold">
-                                <AmenityIcon name={a.name} />
+                                <AmenityIcon name={a.name} icon={a.icon} />
                                 {a.name}
                             </div>
                         ))}
@@ -467,7 +471,20 @@ function RoomCard({ room, index, getUrl }: { room: Room, index: number, getUrl: 
 
 // ── HELPERS & UTILITIES ──────────────────────────────────────────────────────
 
-function AmenityIcon({ name }: { name: string }) {
+function AmenityIcon({ name, icon }: { name: string; icon?: string }) {
+    // 1. Resolve by Heroicon format (DB stores e.g. "heroicon-o-wifi")
+    if (icon && icon.startsWith('heroicon')) {
+        let IconSet: any = OutlineIcons;
+        if (icon.startsWith('heroicon-s-')) IconSet = SolidIcons;
+        else if (icon.startsWith('heroicon-m-')) IconSet = MiniIcons;
+
+        const cleanName = icon.replace(/^(heroicon-o-|heroicon-s-|heroicon-m-|heroicon-c-|heroicon-)/, '');
+        const pascalName = cleanName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        const IconComponent = IconSet[`${pascalName}Icon`] || OutlineIcons[`${pascalName}Icon`];
+        if (IconComponent) return <IconComponent style={{ width: 11, height: 11 }} />;
+    }
+
+    // 2. Fallback: match by amenity name keywords (Lucide icons)
     const n = name.toLowerCase();
     if (n.includes('wifi')) return <Wifi size={11} />;
     if (n.includes('tv')) return <Tv size={11} />;

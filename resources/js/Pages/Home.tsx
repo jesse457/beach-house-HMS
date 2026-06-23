@@ -23,6 +23,11 @@ import {
     Trophy,
 } from "lucide-react";
 
+// Heroicons for amenity icon resolution (matches Filament DB format)
+import * as OutlineIcons from '@heroicons/react/24/outline';
+import * as SolidIcons from '@heroicons/react/24/solid';
+import * as MiniIcons from '@heroicons/react/20/solid';
+
 import Layout from "../Layouts/Layout";
 import GallerySection from "../Components/GallerySection";
 import AmenitiesSection from "../Components/AmenitiesSection";
@@ -38,7 +43,7 @@ interface Room {
     available: boolean;
     images?: string[];
     video_url?: string;
-    amenities?: string[];
+    amenities?: { name: string; icon: string }[];
 }
 
 interface Testimonial {
@@ -573,6 +578,21 @@ export default function Home({
     );
 }
 
+// ─── Heroicon Resolver (matches AmenitiesSection.tsx) ─────────────────────────
+function DynamicHeroIcon({ iconName, className }: { iconName: string; className: string }) {
+  if (!iconName) return <OutlineIcons.InformationCircleIcon className={className} />;
+
+  let IconSet: any = OutlineIcons;
+  if (iconName.startsWith('heroicon-s-')) IconSet = SolidIcons;
+  else if (iconName.startsWith('heroicon-m-')) IconSet = MiniIcons;
+
+  const cleanName = iconName.replace(/^(heroicon-o-|heroicon-s-|heroicon-m-|heroicon-c-|heroicon-)/, '');
+  const pascalName = cleanName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+  const IconComponent = IconSet[`${pascalName}Icon`] || OutlineIcons[`${pascalName}Icon`];
+
+  return IconComponent ? <IconComponent className={className} /> : <OutlineIcons.InformationCircleIcon className={className} />;
+}
+
 // ─── Home Room Card ──────────────────────────────────────────────────────────
 function HomeRoomCard({ room, index }: { room: Room; index: number }) {
     const [activeImg, setActiveImg] = useState(0);
@@ -761,13 +781,13 @@ function HomeRoomCard({ room, index }: { room: Room; index: number }) {
                             <div className="mt-6 grid grid-cols-2 gap-y-2.5 gap-x-3">
                                 {room.amenities.slice(0, 6).map((a) => (
                                     <div
-                                        key={a}
+                                        key={a.name}
                                         className="flex items-center gap-2 text-xs text-neutral-600"
                                     >
-                                        <div className="shrink-0 h-4 w-4 rounded-full bg-[#2D5016]/10 flex items-center justify-center">
-                                            <Check className="h-2.5 w-2.5 text-[#2D5016]" />
+                                        <div className="shrink-0 h-5 w-5 rounded-full bg-[#2D5016]/10 flex items-center justify-center">
+                                            <DynamicHeroIcon iconName={a.icon} className="h-3 w-3 text-[#2D5016]" />
                                         </div>
-                                        <span className="truncate">{a}</span>
+                                        <span className="truncate">{a.name}</span>
                                     </div>
                                 ))}
                             </div>

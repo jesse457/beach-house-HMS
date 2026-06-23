@@ -81,7 +81,10 @@ public function index()
                 'images' => $images,
                 'video_url' => $videoUrl,
                 // Pluck amenity names from the BelongsToMany relation
-                'amenities' => $room->amenities->pluck('name')->toArray(),
+                'amenities' => $room->amenities->map(fn($a) => [
+                    'name' => $a->name,
+                    'icon' => $a->icon,
+                ])->values()->toArray(),
             ];
         });
 
