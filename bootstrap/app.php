@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,20 +12,6 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withSchedule(function (Schedule $schedule) {
-        // Register the backup task here so resolveConsoleSchedule() always finds it,
-        // even under Octane where include_once skips re-execution of console.php.
-        $schedule->command('backup:run')
-            ->weekly()
-            ->sundays()
-            ->at('02:00')
-            ->withoutOverlapping()
-            ->runInBackground()
-            ->description('Backup database and media files to Cloudflare R2')
-            ->onFailure(function () {
-                \Illuminate\Support\Facades\Log::error('Scheduled weekly backup failed');
-            });
-    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             HandleInertiaRequests::class,
