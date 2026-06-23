@@ -169,11 +169,12 @@ return [
     */
 
     'include_files' => [
+        // App logs
         '*.log',
         '**/*.log',
-        // Nginx logs (mounted from host via docker-compose volume)
-        '/var/log/nginx/*access*' => 'Nginx Access',
-        '/var/log/nginx/*error*' => 'Nginx Error',
+        // Host logs (mounted via docker-compose volume: /home/jesse/logs -> /var/log/host)
+        '/var/log/host/nginx/*' => 'Nginx',
+        '/var/log/host/docker/*' => 'Docker',
     ],
 
     /*
@@ -185,7 +186,7 @@ return [
     */
 
     'exclude_files' => [
-        // 'my_secret.log'
+        '*octane*',
     ],
 
     /*
