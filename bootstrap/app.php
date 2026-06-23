@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust all proxies — needed when behind Nginx/Caddy so Laravel
         // respects the X-Forwarded-Proto header and generates HTTPS URLs.
         $middleware->trustProxies('*');
+
+        // Redirect unauthenticated users to the Filament admin login
+        // (protects /schedulers, /log-viewer, and any web+auth routes)
+        $middleware->redirectGuestsTo('/admin/login');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
