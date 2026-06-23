@@ -14,108 +14,155 @@ class BackupRun extends Command
 
     public function handle(): int
     {
-        $this->info('Starting backup...');
-        Log::info('Backup: starting');
+        $startTime = microtime(true);
+
+        $dbConfig = config('database.connections.' . config('database.default'));
+        $dbDriver = $dbConfig['driver'] ?? 'unknown';
+        $dbName = $dbConfig['database'] ?? 'database';
+        if (str_contains($dbName, '/') || str_contains($dbName, '\\')) {
+            $dbName = pathinfo($dbName, PATHINFO_FILENAME);
+        }
+
+        $this->info("Starting backup — DB: {$dbName} ({$dbDriver}), target: Cloudflare R2");
+        Log::info('Backup starting', [
+            'database' => $dbName,
+            'driver' => $dbDriver,
+            'media_disk' => 's3',
+            'target_disk' => 'r2',
+        ]);
 
         // 1. Create temp directory
         $tempDir = config('backup.temp_path') . '/' . date('Ymd_His') . '_' . bin2hex(random_bytes(4));
         if (! is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
-        $this->line("Temp dir: {$tempDir}");
-
-        $dbConfig = config('database.connections.' . config('database.default'));
-        $dbName = $dbConfig['database'] ?? 'database';
-        // Sanitize: if it's a file path, just use the filename without extension
-        if (str_contains($dbName, '/') || str_contains($dbName, '\\')) {
-            $dbName = pathinfo($dbName, PATHINFO_FILENAME);
-        }
+        $this->line("Temp directory: {$tempDir}");
         $hasErrors = false;
 
         // 2. Dump database
         if (config('backup.sources.database')) {
-            $this->info('Dumping database...');
+            $this->info("Dumping database [{$dbDriver}]: {$dbName}...");
+            $stepStart = microtime(true);
             try {
                 $this->dumpDatabase($tempDir);
-                $this->info('Database dump complete.');
+                $elapsed = round(microtime(true) - $stepStart, 2);
+                $this->info("Database dump complete ({$elapsed}s).");
+                Log::info('Backup: database dumped', ['database' => $dbName, 'driver' => $dbDriver, 'time_s' => $elapsed]);
             } catch (\Throwable $e) {
-                $this->error('Database dump failed: ' . $e->getMessage());
-                Log::error('Backup: database dump failed', ['error' => $e->getMessage()]);
+                $this->error("Database dump FAILED: {$e->getMessage()}");
+                Log::error('Backup: database dump failed', [
+                    'database' => $dbName,
+                    'driver' => $dbDriver,
+                    'error' => $e->getMessage(),
+                ]);
                 $hasErrors = true;
             }
         }
 
         // 3. Download media from S3
         if (config('backup.sources.media')) {
-            $this->info('Downloading media from S3...');
+            $this->info('Downloading media from S3 storage...');
+            $stepStart = microtime(true);
             try {
                 $count = $this->downloadMedia($tempDir . '/media');
-                $this->info("Downloaded {$count} media files.");
+                $elapsed = round(microtime(true) - $stepStart, 2);
+                $this->info("Media download complete: {$count} files ({$elapsed}s).");
+                Log::info('Backup: media downloaded', ['file_count' => $count, 'time_s' => $elapsed]);
             } catch (\Throwable $e) {
-                $this->error('Media download failed: ' . $e->getMessage());
-                Log::error('Backup: media download failed', ['error' => $e->getMessage()]);
+                $this->error("Media download FAILED: {$e->getMessage()}");
+                Log::error('Backup: media download failed', [
+                    'error' => $e->getMessage(),
+                ]);
                 $hasErrors = true;
             }
         }
 
         if ($hasErrors) {
-            $this->warn('Some sources failed — proceeding to create archive with what we have.');
+            $this->warn('Some data sources had errors — proceeding with partial backup.');
+            Log::warning('Backup: proceeding with partial data due to source errors');
         }
 
         // 4. Create compressed archive
-        $this->info('Creating archive...');
+        $this->info('Creating compressed archive...');
         $archiveName = sprintf('backup-%s-%s.tar.gz', $dbName, date('Ymd_His'));
         $archivePath = $tempDir . '/' . $archiveName;
+        $stepStart = microtime(true);
 
         try {
             $this->createArchive($tempDir, $archivePath, $archiveName);
             $archiveSize = round(filesize($archivePath) / 1024 / 1024, 2);
-            $this->info("Archive created: {$archiveName} ({$archiveSize} MB)");
+            $elapsed = round(microtime(true) - $stepStart, 2);
+            $this->info("Archive created: {$archiveName} ({$archiveSize} MB, {$elapsed}s).");
+            Log::info('Backup: archive created', [
+                'file' => $archiveName,
+                'size_mb' => $archiveSize,
+                'time_s' => $elapsed,
+            ]);
         } catch (\Throwable $e) {
-            $this->error('Archive creation failed: ' . $e->getMessage());
-            Log::error('Backup: archive creation failed', ['error' => $e->getMessage()]);
+            $this->error("Archive creation FAILED: {$e->getMessage()}");
+            Log::error('Backup: archive creation failed', [
+                'error' => $e->getMessage(),
+                'temp_dir' => $tempDir,
+            ]);
             $this->cleanupTemp($tempDir);
             return self::FAILURE;
         }
 
         // 5. Upload to R2
-        $this->info('Uploading to R2...');
+        $this->info("Uploading {$archiveSize} MB to Cloudflare R2...");
+        $stepStart = microtime(true);
         try {
             $stream = fopen($archivePath, 'r');
             if (! $stream) {
-                throw new \RuntimeException("Unable to open archive for upload: {$archivePath}");
+                throw new \RuntimeException("Cannot open archive file for reading: {$archivePath}");
             }
             Storage::disk('r2')->writeStream('backups/' . $archiveName, $stream);
-            // writeStream closes the stream internally — only fclose if still open
             if (is_resource($stream)) {
                 fclose($stream);
             }
-            $this->info('Upload complete.');
-            Log::info('Backup: uploaded to R2', ['file' => $archiveName, 'size_mb' => $archiveSize]);
+            $elapsed = round(microtime(true) - $stepStart, 2);
+            $this->info("Upload complete ({$elapsed}s).");
+            Log::info('Backup: uploaded to R2', [
+                'file' => $archiveName,
+                'size_mb' => $archiveSize,
+                'time_s' => $elapsed,
+            ]);
         } catch (\Throwable $e) {
-            $this->error('Upload failed: ' . $e->getMessage());
-            Log::error('Backup: upload to R2 failed', ['error' => $e->getMessage(), 'local_archive' => $archivePath]);
+            $this->error("Upload FAILED: {$e->getMessage()}");
+            Log::error('Backup: upload to R2 failed', [
+                'error' => $e->getMessage(),
+                'file' => $archiveName,
+                'local_archive' => $archivePath,
+            ]);
             $this->cleanupTemp($tempDir);
             return self::FAILURE;
         }
 
         // 6. Cleanup old backups on R2
-        $this->info('Cleaning up old backups...');
+        $this->info('Cleaning up old backups (keeping ' . config('backup.keep', 10) . ')...');
         try {
             $deleted = $this->cleanupRemoteBackups();
             if ($deleted > 0) {
                 $this->info("Removed {$deleted} old backup(s) from R2.");
+                Log::info('Backup: old backups removed from R2', ['deleted_count' => $deleted]);
+            } else {
+                $this->line('No old backups to remove.');
             }
         } catch (\Throwable $e) {
-            $this->warn('Remote cleanup failed (non-fatal): ' . $e->getMessage());
+            $this->warn('Remote cleanup skipped (non-fatal): ' . $e->getMessage());
             Log::warning('Backup: remote cleanup failed', ['error' => $e->getMessage()]);
         }
 
         // 7. Cleanup local temp
         $this->cleanupTemp($tempDir);
 
-        $this->info('Backup completed successfully.');
-        Log::info('Backup: completed', ['archive' => $archiveName, 'size_mb' => $archiveSize]);
+        $totalTime = round(microtime(true) - $startTime, 2);
+        $this->info("Backup completed successfully — total time: {$totalTime}s.");
+        Log::info('Backup: completed', [
+            'archive' => $archiveName,
+            'size_mb' => $archiveSize,
+            'total_time_s' => $totalTime,
+        ]);
         return self::SUCCESS;
     }
 
