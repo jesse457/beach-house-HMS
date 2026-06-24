@@ -42,9 +42,9 @@ A full-featured hotel/resort management system built with Laravel 13, Filament 5
 ### Public Booking Site
 - Browse available rooms with filtering and pagination
 - Room detail pages with photo/video galleries
-- Shopping cart (localStorage-backed)
-- Guest checkout with booking confirmation
-- Team/staff page
+- Shopest checkout with booking confirmation
+- Tping cart (localStorage-backed)
+- Gueam/staff page
 - Hotel location page
 - Full media gallery with lightbox
 
@@ -71,6 +71,15 @@ A full-featured hotel/resort management system built with Laravel 13, Filament 5
 - **Billing**: rooms × nights + guest orders + amenity bookings − discounts
 - **Concurrency protection**: pessimistic row-level locking (`lockForUpdate()`) within `DB::transaction()`
 - **Auto-generated booking references**: `BK-XXXXXX`
+
+### Monitoring & Operations
+- **Log Viewer** (`/log-viewer`) — classified log browser with auth (admin/receptionist), showing:
+  - Laravel application logs (`storage/logs/laravel.log`)
+  - Nginx access & error logs (mounted from host)
+  - Docker container logs (captured via cron every 5 minutes)
+- **Scheduler List** (`/schedulers`) — view and manually run scheduled tasks (admin/receptionist)
+- **Structured logging** — all controllers log with timing and context data (JSON)
+- **Weekly backups** to Cloudflare R2 (Sundays at 2am): database + media files, keeps last 10
 
 ## Data Model
 
@@ -160,6 +169,24 @@ The multi-stage Dockerfile runs as non-root (`www-data`) and uses Supervisor to 
 - **FrankenPHP** (Laravel Octane, 2 workers, max 500 requests)
 - **Queue worker** (2 processes)
 
+### Production Logging
+
+Logs are written to stderr (captured by Docker) and a local `laravel.log` simultaneously. Host logs are shared into the container for the Log Viewer:
+
+```
+Host                          Container
+/home/jesse/logs/             /var/log/host/ (read-only)
+├── nginx/
+│   ├── access.log            → Log Viewer: Nginx
+│   └── error.log
+└── docker/
+    └── app.log               → Log Viewer: Docker (cron every 5m)
+```
+
+Nginx logs are routed to the shared directory via `access_log`/`error_log` directives in `/etc/nginx/sites-enabled/botaland`. Docker logs are captured by a crontab entry: `*/5 * * * * docker logs botaland_app --since 5m >> /home/jesse/logs/docker/app.log`.
+
+**Access**: Log in at `/admin` or `/reception`, then visit `/log-viewer`. Authorized for admin and receptionist roles via `Gate::define('viewLogViewer', ...)`.
+
 ## Testing
 
 ```bash
@@ -229,6 +256,17 @@ tests/                         # 174 tests, 385 assertions
 | `AWS_BUCKET` | S3 bucket name |
 | `AWS_USE_PATH_STYLE_ENDPOINT` | `true` for MinIO |
 | `DB_CONNECTION` | `mysql` for production, `sqlite` for testing |
+| `LOG_CHANNEL` | `stack` (combines stderr + single for production) |
+| `LOG_STACK` | Comma-separated channel list: `stderr,single` in production |
+| `R2_ACCESS_KEY_ID` | Cloudflare R2 access key (weekly backups) |
+| `R2_SECRET_ACCESS_KEY` | Cloudflare R2 secret key |
+| `R2_ENDPOINT` | R2 endpoint URL |
+| `R2_BUCKET` | R2 bucket name (`hotel-backups`) |
+| `R2_REGION` | R2 region (`auto`) |
+| `BACKUP_KEEP` | Number of backups to retain (default 10) |
+| `SCHEDULER_LIST_PATH` | URL path for scheduler dashboard (default `schedulers`) |
+| `LOG_VIEWER_ENABLED` | Enable/disable log viewer (default `true`) |
+| `LOG_VIEWER_API_ONLY` | API-only mode for log viewer (default `false`) |
 
 ## CI/CD
 
@@ -256,6 +294,10 @@ php artisan optimize         # Cache config, routes, views
 
 # Code Quality
 ./vendor/bin/pint           # PHP CS Fixer (PSR-12)
+
+# Monitoring
+php artisan backup:run       # Trigger a manual backup to R2
+php artisan schedule:list    # List all scheduled tasks
 ```
 
 ## License

@@ -741,7 +741,7 @@ function HomeRoomCard({ room, index }: { room: Room; index: number }) {
 
                         {/* Badges */}
                         <div className="absolute top-4 left-4 z-10 bg-[#2D5016] text-[#F5F2E8] font-bold px-3 py-1.5 rounded-full text-xs shadow-md">
-                            ${Number(room.price_per_night).toLocaleString()}
+                            FCFA{Number(room.price_per_night).toLocaleString()}
                             <span className="font-normal text-[#C8DBA8]"> /night</span>
                         </div>
 

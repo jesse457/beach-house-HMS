@@ -74,7 +74,7 @@ HMS/
 │   ├── Policies/
 │   │   └── BookingPolicy.php      # Empty — no auth policies defined yet
 │   └── Providers/
-│       ├── AppServiceProvider.php          # Registers Scramble API docs
+│       ├── AppServiceProvider.php          # Gates (viewLogViewer, viewSchedulerList), weekly R2 backup schedule, Scramble API docs
 │       └── Filament/
 │           ├── AdminPanelProvider.php      # /admin panel config
 │           └── ReceptionPanelProvider.php  # /reception panel config
@@ -84,11 +84,13 @@ HMS/
 ├── config/                         # Laravel config files
 │   ├── app.php, auth.php, cache.php, database.php
 │   ├── filesystems.php             # Local, public, S3 disks
-│   ├── livewire.php, logging.php, mail.php
+│   ├── livewire.php, logging.php, log-viewer.php, mail.php
 │   ├── octane.php                  # FrankenPHP server config
 │   ├── queue.php, sanctum.php
 │   ├── scramble.php                # API documentation config
 │   ├── services.php, session.php
+│   ├── backup.php                  # Cloudflare R2 weekly backup config
+│   ├── scheduler-list.php          # Scheduler dashboard access config
 ├── database/
 │   ├── factories/                  # 9 factories: Amenity, Booking, Guest,
 │   │                               #   GuestOrder, GuestOrderItem, Payment,
@@ -211,6 +213,54 @@ php artisan optimize             # Cache config, routes, views
 | Admin | `/admin` (Filament) | `AdminPanelProvider` | Admin only |
 
 Panel access is enforced in `User::canAccessPanel()` (`app/Models/User.php`), keyed on the `UserRole` enum (`admin`, `receptionist`, `staff`).
+
+### Logging Architecture
+
+Production logging uses a **stack channel** (`LOG_CHANNEL=stack`, `LOG_STACK=stderr,single`) writing simultaneously to:
+1. **stderr** — captured by Docker, visible via `docker logs botaland_app`
+2. **single** — `storage/logs/laravel.log` (local file, viewable in Log Viewer)
+
+All controllers use structured logging with timing and context via `Log::info()`:
+```php
+Log::info('Homepage rendered', ['amenities' => $amenities->count(), 'time_ms' => round($elapsed, 1)]);
+```
+
+Host logs are mounted into the container for centralized viewing:
+
+| Host Path | Container Path | Log Viewer Label |
+|-----------|---------------|-----------------|
+| `/home/jesse/logs/nginx/access.log` | `/var/log/host/nginx/access.log` | Nginx |
+| `/home/jesse/logs/nginx/error.log` | `/var/log/host/nginx/error.log` | Nginx |
+| `/home/jesse/logs/docker/app.log` | `/var/log/host/docker/app.log` | Docker |
+
+The volume is mounted **read-only** in `docker-compose.yml`:
+```yaml
+volumes:
+  - /home/jesse/logs:/var/log/host:ro
+```
+
+Nginx logs are routed to the shared directory via `access_log`/`error_log` directives in `/etc/nginx/sites-enabled/botaland`. Docker logs are captured by a host crontab: `*/5 * * * * docker logs botaland_app --since 5m >> /home/jesse/logs/docker/app.log`.
+
+### Monitoring Tools
+
+#### Log Viewer (`/log-viewer`)
+
+`opcodesio/log-viewer` v3.24 — classified log browser at `/log-viewer`. Configuration in `config/log-viewer.php`:
+- `require_auth_in_production` → `true` (no unauthenticated access in production)
+- `include_files` — maps host log paths to labeled folders:
+  - `*.log` + `**/*.log` — Laravel app logs (shown as "root")
+  - `/var/log/host/nginx/*` → labeled "Nginx"
+  - `/var/log/host/docker/*` → labeled "Docker"
+- `hide_unknown_files` → `true` (filters non-log files like `octane-server-state.json`)
+
+Authorization: `Gate::define('viewLogViewer', ...)` in `AppServiceProvider` restricts access to admin and receptionist roles. Guest users are redirected to login by `redirectGuestsTo` middleware in `bootstrap/app.php`.
+
+#### Scheduler List (`/schedulers`)
+
+`devakshay/scheduler-list-laravel` v1.0 — dashboard to view and manually run scheduled tasks at `/schedulers`. Configuration in `config/scheduler-list.php`:
+- Protected by `web` + `auth` middleware
+- Access gated by `viewSchedulerList` ability (same admin/receptionist roles as Log Viewer)
+- Manual execution enabled, output limited to 12,000 characters
 
 ### Request Flow (Public Site)
 
@@ -364,6 +414,35 @@ Then subtracts `discount_amount`. The result is `total_price`.
 
 `Booking::getBalanceDueAttribute()` computes: `(total_price + guest_orders_total) - total_payments`.
 
+## App Service Provider (`app/Providers/AppServiceProvider.php`)
+
+Centralizes application bootstrapping:
+
+**Authorization Gates**:
+```php
+Gate::define('viewLogViewer', fn(User $user) => in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]));
+Gate::define('viewSchedulerList', fn(User $user) => in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]));
+```
+
+**Scheduled Tasks** — registered via `afterResolving(Schedule::class, ...)` so they fire for both HTTP requests (scheduler UI) and CLI (`schedule:work`):
+- `backup:run` — Weekly on Sundays at 02:00, without overlapping, runs in background. On failure, logs an error via `Log::error()`.
+
+**Other**: Forces HTTPS in non-local environments, configures Scramble API docs with Bearer token security.
+
+## Automated Backups
+
+Weekly backups to **Cloudflare R2** (S3-compatible) using a custom backup script. Configuration in `config/backup.php`:
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `BACKUP_KEEP` | 10 | Retain last N backups on R2 |
+| `BACKUP_TEMP_DIR` | `storage/app/backups` | Local temp path for archive |
+| Sources | database + media | What gets backed up |
+
+The backup archives MySQL dumps and media files (S3/MinIO storage), uploads them to an R2 bucket, and prunes old backups beyond the retention count.
+
+**Schedule**: Sundays at 2am via `AppServiceProvider` → `afterResolving(Schedule::class, ...)`. Manual runs available via `/schedulers` dashboard or `php artisan backup:run`.
+
 ## Filament Admin Panel (`/admin`)
 
 **Panel Provider**: `app/Providers/Filament/AdminPanelProvider.php`
@@ -503,5 +582,9 @@ Two-stage pipeline:
 | `config/octane.php` | Octane server config (FrankenPHP) |
 | `config/filesystems.php` | S3/MinIO disk configuration |
 | `config/scramble.php` | API documentation (Scramble) |
-| `bootstrap/app.php` | App bootstrap, middleware registration |
+| `config/log-viewer.php` | Log Viewer: auth, file includes, host log paths |
+| `config/scheduler-list.php` | Scheduler dashboard: access, middleware, manual execution |
+| `config/backup.php` | R2 backup: retention, sources (database + media) |
+| `config/logging.php` | Log channels: stack (stderr + single), levels, formatters |
+| `bootstrap/app.php` | App bootstrap, middleware registration, redirectGuestsTo for /schedulers and /log-viewer |
 | `bootstrap/providers.php` | Service provider registration |
