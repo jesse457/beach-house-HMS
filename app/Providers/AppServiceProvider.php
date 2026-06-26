@@ -63,6 +63,16 @@ class AppServiceProvider extends ServiceProvider
                 ->onFailure(function () {
                     Log::error('Scheduled weekly backup failed');
                 });
+
+            $schedule->command('images:optimize')
+                ->daily()
+                ->at('03:00')
+                ->withoutOverlapping()
+                ->runInBackground()
+                ->description('Convert newly uploaded JPG/PNG images to WebP')
+                ->onFailure(function () {
+                    Log::error('Scheduled image optimization failed');
+                });
         });
     }
 }
