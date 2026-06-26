@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from '@inertiajs/react'
 import { Menu, X } from 'lucide-react'
 
-export default function MobileMenu({ user, isAdmin }: { user: any | null; isAdmin: boolean }) {
+const MobileMenu = React.memo(function MobileMenu({ user, isAdmin }: { user: any | null; isAdmin: boolean }) {
     const [open, setOpen] = useState(false)
 
     return (
@@ -21,6 +21,7 @@ export default function MobileMenu({ user, isAdmin }: { user: any | null; isAdmi
                         { href: '/rooms', label: 'Rooms' },
                         { href: '/gallery', label: 'Gallery' },
                         { href: '/services', label: 'Services' },
+                        { href: '/reviews', label: 'Reviews' },
                         { href: '/team', label: 'Our Team' },
                         { href: '/location', label: 'Location' },
                     ].map(({ href, label }) => (
@@ -40,5 +41,7 @@ export default function MobileMenu({ user, isAdmin }: { user: any | null; isAdmi
                 </div>
             )}
         </div>
-    )
-}
+    );
+});
+
+export default MobileMenu;

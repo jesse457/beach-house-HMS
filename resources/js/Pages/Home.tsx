@@ -1,26 +1,19 @@
-import React, { useRef, useState, useEffect } from "react";
-import { Link } from "@inertiajs/react";
+import React, { useRef, useState, useEffect, lazy, Suspense } from "react";
+import { Link, Head } from "@inertiajs/react";
 import SEO from "../Components/SEO";
 import {
     motion,
     useScroll,
     useTransform,
     AnimatePresence,
-    Variants,
 } from "framer-motion";
 import {
     ArrowRight,
-    Star,
     ChevronDown,
     Play,
     Pause,
     ChevronLeft,
     ChevronRight,
-    Users,
-    Check,
-    Leaf,
-    Utensils,
-    Trophy,
 } from "lucide-react";
 
 // Heroicons for amenity icon resolution (matches Filament DB format)
@@ -29,8 +22,20 @@ import * as SolidIcons from '@heroicons/react/24/solid';
 import * as MiniIcons from '@heroicons/react/20/solid';
 
 import Layout from "../Layouts/Layout";
-import GallerySection from "../Components/GallerySection";
-import AmenitiesSection from "../Components/AmenitiesSection";
+
+// Lazy-loaded section components (below the fold — heavy with framer-motion + icon libs)
+const GallerySection = lazy(() => import("../Components/GallerySection"));
+const AmenitiesSection = lazy(() => import("../Components/AmenitiesSection"));
+const ReviewsSection = lazy(() => import("../Components/ReviewsSection"));
+
+// ─── SECTION LOADING PLACEHOLDER ────────────────────────────────────────────
+const SectionSkeleton = ({ height = "h-64" }: { height?: string }) => (
+    <section className={`py-28 bg-[#F5F2E8] ${height} animate-pulse`}>
+        <div className="mx-auto max-w-7xl px-4">
+            <div className="h-8 w-48 bg-[#2D5016]/10 rounded-lg mx-auto" />
+        </div>
+    </section>
+);
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 interface Room {
@@ -112,41 +117,6 @@ const Reveal = ({
     );
 };
 
-const StaggerContainer = ({
-    children,
-    className = "",
-}: {
-    children: React.ReactNode;
-    className?: string;
-}) => {
-    const variants: Variants = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-        },
-    };
-    return (
-        <motion.div
-            variants={variants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className={className}
-        >
-            {children}
-        </motion.div>
-    );
-};
-
-const StaggerItem = ({ children }: { children: React.ReactNode }) => {
-    const variants: Variants = {
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 },
-    };
-    return <motion.div variants={variants}>{children}</motion.div>;
-};
-
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 export default function Home({
     rooms = [],
@@ -202,6 +172,11 @@ export default function Home({
                     },
                 ]}
             />
+
+            {/* Preload LCP hero image for faster Largest Contentful Paint */}
+            <Head>
+                <link rel="preload" as="image" href="/images/beach-day2.webp" fetchPriority="high" />
+            </Head>
 
             <main className="overflow-x-hidden">
                 {/* ── HERO ─────────────────────────────────────────────────────────── */}
@@ -464,8 +439,12 @@ export default function Home({
                 </section> */}
 
                 {/* ── AMENITIES & GALLERY ────────────────────────────────────────────────── */}
-                <AmenitiesSection amenities={amenities} />
-                <GallerySection items={featuredGallery} />
+                <Suspense fallback={<SectionSkeleton />}>
+                    <AmenitiesSection amenities={amenities} />
+                </Suspense>
+                <Suspense fallback={<SectionSkeleton />}>
+                    <GallerySection items={featuredGallery} />
+                </Suspense>
 
                 {/* ── FEATURED ROOMS ───────────────────────────────────────────────── */}
                 {rooms.length > 0 && (
@@ -504,53 +483,11 @@ export default function Home({
                     </section>
                 )}
 
-                {/* ── TESTIMONIALS (Auto-hidden if empty) ─────────────────────────────────── */}
+                {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
                 {testimonials && testimonials.length > 0 && (
-                    <section className="py-28 bg-[#EAE6D6]">
-                        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                            <Reveal className="text-center mb-12">
-                                <span className="text-[#6B9E3F] text-sm font-semibold uppercase tracking-widest">
-                                    Testimonials
-                                </span>
-                                <h2 className="mt-3 text-4xl font-bold text-[#2D5016]">
-                                    What Our Guests Say
-                                </h2>
-                            </Reveal>
-
-                            <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {testimonials.map((t) => {
-                                    const rating = Math.min(5, Math.max(0, Math.floor(t.rating)));
-                                    return (
-                                        <StaggerItem key={t.id}>
-                                            <div className="bg-[#F5F2E8] h-full rounded-2xl p-7 border border-[#2D5016]/10 hover:shadow-lg transition-shadow flex flex-col justify-between">
-                                                <div>
-                                                    <div className="flex gap-1 mb-4">
-                                                        {Array.from({ length: rating }).map((_, i) => (
-                                                            <Star
-                                                                key={i}
-                                                                className="h-4 w-4 fill-[#3D6B1F] text-[#3D6B1F]"
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                    <p className="text-neutral-600 text-sm leading-relaxed mb-5">
-                                                        "{t.content}"
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-3 mt-4">
-                                                    <div className="h-9 w-9 rounded-full bg-[#2D5016] flex items-center justify-center text-[#F5F2E8] font-bold text-sm select-none">
-                                                        {t.author_name[0]?.toUpperCase()}
-                                                    </div>
-                                                    <span className="font-semibold text-[#2D5016] text-sm">
-                                                        {t.author_name}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </StaggerItem>
-                                    );
-                                })}
-                            </StaggerContainer>
-                        </div>
-                    </section>
+                    <Suspense fallback={<SectionSkeleton height="h-72" />}>
+                        <ReviewsSection reviews={testimonials} />
+                    </Suspense>
                 )}
 
                 {/* ── CTA ──────────────────────────────────────────────────────────── */}
@@ -699,6 +636,8 @@ function HomeRoomCard({ room, index }: { room: Room; index: number }) {
                                         src={images[activeImg]}
                                         alt={room.name}
                                         className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        decoding="async"
                                     />
                                 </motion.div>
                             )}

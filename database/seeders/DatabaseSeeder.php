@@ -8,6 +8,7 @@ use App\Models\Guest;
 use App\Models\GuestOrder;
 use App\Models\GuestOrderItem;
 use App\Models\Payment;
+use App\Models\Review;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Service;
@@ -111,6 +112,56 @@ class DatabaseSeeder extends Seeder
                 'status' => 'paid',
                 'paid_at' => now(),
             ]);
+        }
+
+        // 8. Create sample approved reviews
+        $sampleReviews = [
+            [
+                'author_name' => 'Marie N.',
+                'email' => 'marie@example.com',
+                'content' => 'Absolutely stunning property! The views of the ocean from our room were breathtaking. The staff went above and beyond to make our stay memorable. Will definitely return.',
+                'rating' => 5,
+                'is_approved' => true,
+            ],
+            [
+                'author_name' => 'Jean-Paul K.',
+                'email' => 'jeanpaul@example.com',
+                'content' => 'A hidden gem in Limbe. The Mediterranean-style architecture is beautiful, and the private peninsula setting makes you feel like royalty. The food was exceptional.',
+                'rating' => 5,
+                'is_approved' => true,
+            ],
+            [
+                'author_name' => 'Sarah M.',
+                'email' => 'sarah@example.com',
+                'content' => 'We hosted our company retreat here and it was perfect. The meeting hall was well-equipped, the rooms were luxurious, and the team helped with every detail. Highly recommended.',
+                'rating' => 4,
+                'is_approved' => true,
+            ],
+            [
+                'author_name' => 'David O.',
+                'email' => 'david@example.com',
+                'content' => 'The spa treatments were world-class and the infinity pool overlooking the Atlantic is something I will never forget. This is hands down the best resort in the region.',
+                'rating' => 5,
+                'is_approved' => true,
+            ],
+            [
+                'author_name' => 'Amara E.',
+                'email' => 'amara@example.com',
+                'content' => 'From the airport pickup to the checkout, everything was seamless. The room was spotless, the bed incredibly comfortable, and the sunrise views were magical.',
+                'rating' => 5,
+                'is_approved' => true,
+            ],
+            [
+                'author_name' => 'Thomas B.',
+                'email' => 'thomas@example.com',
+                'content' => 'Our family vacation here was unforgettable. The kids loved the pool, we loved the fine dining, and everyone enjoyed the warm Cameroonian hospitality. A true paradise.',
+                'rating' => 4,
+                'is_approved' => true,
+            ],
+        ];
+
+        foreach ($sampleReviews as $review) {
+            Review::create($review);
         }
     }
 }

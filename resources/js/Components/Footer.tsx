@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from '@inertiajs/react'
 import { MapPin, Phone, Mail } from 'lucide-react'
 
-export default function Footer() {
+const Footer = React.memo(function Footer() {
     return (
         <footer className="bg-[#2D5016] text-[#C8DBA8]" id="contact">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
@@ -21,6 +21,7 @@ export default function Footer() {
                         <ul className="space-y-2.5 text-sm">
                             {[
                                 { href: '/rooms', label: 'Our Rooms' },
+                                { href: '/reviews', label: 'Guest Reviews' },
                                 { href: '/team', label: 'Our Team' },
                                 { href: '/location', label: 'Location & Map' },
                             ].map(({ href, label }) => (
@@ -51,5 +52,7 @@ export default function Footer() {
                 </div>
             </div>
         </footer>
-    )
-}
+    );
+});
+
+export default Footer;

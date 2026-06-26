@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\BookingStatus;
 use App\Models\Amenity;
 use App\Models\Gallery;
+use App\Models\Review;
 use App\Models\Room;
 use App\Models\RoomType;
 use Illuminate\Http\Request;
@@ -84,11 +85,24 @@ public function index()
             ];
         });
 
+    // Fetch approved reviews for the testimonials section
+    $testimonials = Review::approved()
+        ->latest()
+        ->limit(6)
+        ->get()
+        ->map(fn($review) => [
+            'id' => $review->id,
+            'author_name' => $review->author_name,
+            'content' => $review->content,
+            'rating' => $review->rating,
+        ]);
+
     $elapsed = round(microtime(true) - $startTime, 3);
     Log::info('Homepage rendered', [
         'amenities' => $amenities->count(),
         'gallery_items' => $featuredGallery->count(),
         'featured_rooms' => $rooms->count(),
+        'testimonials' => $testimonials->count(),
         'time_ms' => $elapsed * 1000,
     ]);
 
@@ -96,7 +110,7 @@ public function index()
         'featuredGallery' => $featuredGallery,
         'amenities' => $amenities,
         'rooms' => $rooms,
-        'testimonials' => [],
+        'testimonials' => $testimonials,
     ]);
 }
     public function gallery(Request $request)

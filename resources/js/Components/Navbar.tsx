@@ -5,7 +5,7 @@ import { Button } from './ui/Button'
 import MobileMenu from './MobileMenu'
 import CartIcon from './CartIcon'
 
-export default function Navbar() {
+const Navbar = React.memo(function Navbar() {
     const { auth } = usePage<any>().props;
     const user = auth?.user;
 
@@ -18,7 +18,7 @@ export default function Navbar() {
                 <div className="flex h-16 items-center justify-between">
                     {/* LOGO */}
                     <Link href="/" className="flex items-center gap-2.5">
-                        <img src="/images/logo-sm.webp" alt="Beach House Bota Land" width="150" height="150" className="h-15 w-auto" />
+                        <img src="/images/logo-sm.webp" alt="Beach House Bota Land" width="150" height="150" className="h-15 w-auto" fetchpriority="high" />
                     </Link>
 
                     {/* DESKTOP NAV */}
@@ -26,6 +26,7 @@ export default function Navbar() {
                         <Link href="/rooms" className="hover:text-[#2D5016] transition-colors">Rooms</Link>
                         <Link href="/gallery" className="hover:text-[#2D5016] transition-colors">Gallery</Link>
                         <Link href="/services" className="hover:text-[#2D5016] transition-colors">Services</Link>
+                        <Link href="/reviews" className="hover:text-[#2D5016] transition-colors">Reviews</Link>
                         <Link href="/team" className="hover:text-[#2D5016] transition-colors">Our Team</Link>
                         <Link href="/location" className="hover:text-[#2D5016] transition-colors">Location</Link>
                     </nav>
@@ -73,5 +74,7 @@ export default function Navbar() {
                 </div>
             </div>
         </header>
-    )
-}
+    );
+});
+
+export default Navbar;

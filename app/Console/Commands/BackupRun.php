@@ -14,6 +14,10 @@ class BackupRun extends Command
 
     public function handle(): int
     {
+        // Remove execution time limit — backups can take several minutes
+        // depending on database size and media volume.
+        set_time_limit(0);
+
         $startTime = microtime(true);
 
         $dbConfig = config('database.connections.' . config('database.default'));

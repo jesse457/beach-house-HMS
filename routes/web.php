@@ -4,6 +4,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\RoomController;
 use App\Models\Booking;
+use App\Models\Review;
 use App\Models\Service;
 use App\Models\TeamMember;
 use Illuminate\Http\Request;
@@ -64,6 +65,32 @@ Route::get('/services', function (Request $request) {
 Route::get('/location', function (Request $request) {
     return Inertia::render('Main/Location');
 })->name('location');
+
+/**
+ * REVIEWS — public listing and submission
+ */
+Route::get('/reviews', function (Request $request) {
+    $reviews = Review::approved()
+        ->latest()
+        ->paginate(9);
+
+    return Inertia::render('Main/Reviews', [
+        'reviews' => $reviews,
+    ]);
+})->name('reviews');
+
+Route::post('/reviews', function (Request $request) {
+    $validated = $request->validate([
+        'author_name' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'rating' => 'required|integer|min:1|max:5',
+        'content' => 'required|string|max:2000',
+    ]);
+
+    Review::create($validated + ['is_approved' => false]);
+
+    return redirect()->back()->with('success', 'Thank you for your review! It will be visible once approved.');
+})->name('reviews.store');
 
 /**
  * ROOM DETAILS

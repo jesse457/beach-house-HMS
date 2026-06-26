@@ -171,6 +171,10 @@ jobs:
             # # 4. Recreate and start the containers in the background
             docker compose up -d
 
+            docker exec -it app php artisan optimize
+
+            docker exec -it app php artisan migrate --force
+
             # # 5. Clean up old, unused Docker images to save VPS disk space
             docker image prune -f
         env:
