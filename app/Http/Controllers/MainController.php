@@ -115,7 +115,7 @@ public function index()
 }
     public function gallery(Request $request)
     {
-        $perPage = 12;
+        $perPage = 8;
         $page = (int) $request->query('page', 1);
         $type = $request->query('type');           // 'image', 'video', or null (all)
         $category = $request->query('category');   // RoomType name or null (all)

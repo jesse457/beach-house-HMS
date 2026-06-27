@@ -31,6 +31,9 @@ class OptimizeImages extends Command
 
     public function handle(): int
     {
+        // 1. TEMPORARILY ALLOCATE MORE MEMORY FOR THIS PROCESS
+        // CLI processes can safely use 512M or 1024M if your server has the resource.
+        ini_set('memory_limit', '512M');
         set_time_limit(0);
 
         $quality = (int) $this->option('quality');
@@ -61,8 +64,6 @@ class OptimizeImages extends Command
                 $room->update(['pictures' => $optimized]);
             }
         }
-
-        // ── Room videos (skip — video files aren't images) ────────────────
 
         // ── Gallery images ─────────────────────────────────────────────────
         $this->info('── Gallery images ──');
@@ -173,12 +174,17 @@ class OptimizeImages extends Command
                 return $newPath;
             }
 
-            // Download, convert, upload
+            // 2. OPTIMIZE MEMORY LIFECYCLE
             $contents = $disk->get($path);
-            $encoded = $this->image->decode($contents)
-                ->encodeUsingFormat(Format::WEBP,quality:$quality);
+
+            $decodedImage = $this->image->decode($contents);
+            unset($contents); // Instantly free the raw source file contents
+
+            $encoded = $decodedImage->encodeUsingFormat(Format::WEBP, quality: $quality);
+            unset($decodedImage); // Instantly free raw decoded pixel resource
 
             $disk->put($newPath, (string) $encoded, 'public');
+            unset($encoded); // Instantly free the output string representation
 
             $sizeAfter = $disk->size($newPath);
             $this->bytesAfter += $sizeAfter;
@@ -190,6 +196,9 @@ class OptimizeImages extends Command
             $reduction = round((1 - $sizeAfter / $sizeBefore) * 100, 1);
             $this->line("  ✓  <fg=cyan>{$path}</> → <fg=green>{$newPath}</> (" . round($sizeBefore / 1024, 1) . " KB → " . round($sizeAfter / 1024, 1) . " KB, -{$reduction}%)");
             $this->converted++;
+
+            // Force PHP's garbage collector to reclaim unused memory blocks immediately
+            gc_collect_cycles();
 
             return $newPath;
 
