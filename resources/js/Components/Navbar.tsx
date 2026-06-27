@@ -18,7 +18,7 @@ const Navbar = React.memo(function Navbar() {
                 <div className="flex h-16 items-center justify-between">
                     {/* LOGO */}
                     <Link href="/" className="flex items-center gap-2.5">
-                        <img src="/images/logo-sm.webp" alt="Beach House Bota Land" width="150" height="150" className="h-15 w-auto" fetchpriority="high" />
+                        <img src="/images/logo.webp" alt="Beach House Bota Land" width="170" height="150" className="h-23 w-auto" fetchpriority="high" />
                     </Link>
 
                     {/* DESKTOP NAV */}
