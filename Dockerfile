@@ -21,7 +21,7 @@ RUN npm ci && npm run build
 
 # --- Stage 3: Final Production Image ---
 # Upgraded to PHP 8.4 to match your composer.lock requirements
-FROM dunglas/frankenphp:1-php8.4-alpine AS runner
+FROM dunglas/frankenphp:1.13.4-php8.4.27-alpine AS runner
 
 # Install necessary system extensions (intl is included here for Filament!)
 RUN apk add --no-cache supervisor mariadb-client && \
